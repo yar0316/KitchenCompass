@@ -180,8 +180,6 @@ const RecipePage: React.FC = () => {
         return [...recipesToSort].sort((a, b) => a.name.localeCompare(b.name));
       case 'name_desc':
         return [...recipesToSort].sort((a, b) => b.name.localeCompare(a.name));
-      case 'rating':
-        return [...recipesToSort].sort((a, b) => b.rating - a.rating);
       case 'cooking_time':
         return [...recipesToSort].sort((a, b) => a.cookingTime - b.cookingTime);
       default:
@@ -195,7 +193,6 @@ const RecipePage: React.FC = () => {
       ...newRecipe,
       id: Date.now().toString(),
       imageUrl: DUMMY_IMAGE_URL,
-      rating: 0,
       createdAt: new Date().toISOString()
     };
     
