@@ -19,7 +19,7 @@ import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import SortIcon from '@mui/icons-material/Sort';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import NewRecipeDialog from './NewRecipeDialog';
+import RecipeFormDialog from './RecipeFormDialog';
 import RecipeItem from './RecipeItem';
 import RecipeDetails from './RecipeDetails';
 
@@ -82,24 +82,11 @@ const MOCK_RECIPES = [
   }
 ];
 
-// ソートオプション
-const SORT_OPTIONS = [
-  { value: 'newest', label: '新しい順' },
-  { value: 'oldest', label: '古い順' },
-  { value: 'name_asc', label: '名前（昇順）' },
-  { value: 'name_desc', label: '名前（降順）' },
-  { value: 'rating', label: '評価の高い順' },
-  { value: 'cooking_time', label: '調理時間が短い順' }
-];
+// グレーのダミー画像URL（実際のデプロイ時には差し替える）
+const DUMMY_IMAGE_URL = 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%22320%22 height%3D%22180%22 viewBox%3D%220 0 320 180%22 fill%3D%22%23e0e0e0%22%3E%3Crect width%3D%22320%22 height%3D%22180%22%2F%3E%3C%2Fsvg%3E';
 
 // フィルターオプション
 const FILTER_OPTIONS = {
-  difficulty: [
-    { value: 'all', label: 'すべて' },
-    { value: 'easy', label: '簡単' },
-    { value: 'medium', label: '普通' },
-    { value: 'hard', label: '難しい' }
-  ],
   cookingTime: [
     { value: 'all', label: 'すべて' },
     { value: 'under15', label: '15分以内' },
@@ -110,13 +97,21 @@ const FILTER_OPTIONS = {
   tags: ['和食', 'イタリアン', '中華', 'サラダ', 'スープ', '肉料理', '魚料理', 'デザート', 'ベジタリアン', '朝食', 'ヘルシー', '定番']
 };
 
+// ソートオプション
+const SORT_OPTIONS = [
+  { value: 'newest', label: '新しい順' },
+  { value: 'oldest', label: '古い順' },
+  { value: 'name_asc', label: '名前昇順' },
+  { value: 'name_desc', label: '名前降順' },
+  { value: 'cooking_time', label: '調理時間が短い順' }
+];
+
 const RecipePage: React.FC = () => {
   // 状態
   const [recipes, setRecipes] = useState(MOCK_RECIPES);
   const [filteredRecipes, setFilteredRecipes] = useState(MOCK_RECIPES);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState('newest');
-  const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [timeFilter, setTimeFilter] = useState('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -136,11 +131,6 @@ const RecipePage: React.FC = () => {
         recipe.description.toLowerCase().includes(query) ||
         recipe.tags.some(tag => tag.toLowerCase().includes(query))
       );
-    }
-    
-    // 難易度フィルター
-    if (difficultyFilter !== 'all') {
-      result = result.filter(recipe => recipe.difficulty === difficultyFilter);
     }
     
     // 調理時間フィルター
@@ -173,7 +163,7 @@ const RecipePage: React.FC = () => {
     
     setFilteredRecipes(result);
     setPage(1); // フィルター変更時は1ページ目に戻す
-  }, [recipes, searchQuery, sortOption, difficultyFilter, timeFilter, selectedTags]);
+  }, [recipes, searchQuery, sortOption, timeFilter, selectedTags]);
   
   // レシピのソート
   const sortRecipes = (recipesToSort: typeof MOCK_RECIPES, option: string) => {
@@ -204,13 +194,20 @@ const RecipePage: React.FC = () => {
     const newRecipeWithId = {
       ...newRecipe,
       id: Date.now().toString(),
-      imageUrl: 'https://source.unsplash.com/random/300x200/?food',
+      imageUrl: DUMMY_IMAGE_URL,
       rating: 0,
       createdAt: new Date().toISOString()
     };
     
     setRecipes([...recipes, newRecipeWithId]);
     setSelectedRecipe(newRecipeWithId.id);
+  };
+  
+  // レシピの更新
+  const handleUpdateRecipe = (updatedRecipe: any) => {
+    setRecipes(recipes.map(recipe => 
+      recipe.id === updatedRecipe.id ? updatedRecipe : recipe
+    ));
   };
   
   // レシピを選択
@@ -229,11 +226,6 @@ const RecipePage: React.FC = () => {
   // ソートオプション変更
   const handleSortChange = (e: SelectChangeEvent<string>) => {
     setSortOption(e.target.value);
-  };
-  
-  // 難易度フィルター変更
-  const handleDifficultyFilterChange = (e: SelectChangeEvent<string>) => {
-    setDifficultyFilter(e.target.value);
   };
   
   // 時間フィルター変更
@@ -267,128 +259,127 @@ const RecipePage: React.FC = () => {
     : null;
   
   return (
-    <Container maxWidth="lg" sx={{ mt: 1, mb: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h5" component="h1">
-          レシピ
-        </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => setIsDialogOpen(true)}
-        >
-          新規レシピ
-        </Button>
-      </Box>
-      
-      {/* フィルター＆検索セクション */}
-      <Box sx={{ mb: 3 }}>
-        <Grid container spacing={2}>
-          {/* 検索フィールド */}
-          <Grid item xs={12} sm={6} md={6}>
-            <TextField
-              fullWidth
-              placeholder="レシピを検索..."
-              variant="outlined"
-              size="small"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon color="action" />
-                  </InputAdornment>
-                )
-              }}
-            />
-          </Grid>
-          
-          {/* ソートセレクト */}
-          <Grid item xs={12} sm={6} md={3}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="sort-label" sx={{ display: 'flex', alignItems: 'center' }}>
-                <SortIcon sx={{ mr: 0.5, fontSize: '1.2rem' }} /> 並び順
-              </InputLabel>
-              <Select
-                labelId="sort-label"
-                value={sortOption}
-                onChange={handleSortChange}
-                label={<span><SortIcon /> 並び順</span>}
-              >
-                {SORT_OPTIONS.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          {/* 難易度フィルター */}
-          <Grid item xs={6} sm={6} md={1.5}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="difficulty-filter-label">難易度</InputLabel>
-              <Select
-                labelId="difficulty-filter-label"
-                value={difficultyFilter}
-                onChange={handleDifficultyFilterChange}
-                label="難易度"
-              >
-                {FILTER_OPTIONS.difficulty.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          
-          {/* 時間フィルター */}
-          <Grid item xs={6} sm={6} md={1.5}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="time-filter-label">調理時間</InputLabel>
-              <Select
-                labelId="time-filter-label"
-                value={timeFilter}
-                onChange={handleTimeFilterChange}
-                label="調理時間"
-              >
-                {FILTER_OPTIONS.cookingTime.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-        
-        {/* タグフィルター */}
-        <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
-            <FilterListIcon fontSize="small" sx={{ mr: 0.5 }} />
-            <Typography variant="body2" color="text.secondary">タグ:</Typography>
-          </Box>
-          {FILTER_OPTIONS.tags.map((tag) => (
-            <Button
-              key={tag}
-              variant={selectedTags.includes(tag) ? "contained" : "outlined"}
-              color="primary"
-              size="small"
-              onClick={() => handleTagToggle(tag)}
-              sx={{ 
-                borderRadius: 4,
-                py: 0.5,
-                minWidth: 'auto',
-                textTransform: 'none',
-              }}
-            >
-              {tag}
-            </Button>
-          ))}
+    <Container 
+      maxWidth={false} 
+      sx={{ 
+        mt: 1, 
+        mb: 4,
+        px: { xs: 1, sm: 1.5, md: 2 }, 
+        maxWidth: '100vw',
+      }}
+    >
+      {!selectedRecipe && (
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          mb: 2,
+          mx: 0.5, // ヘッダー部分のマージンを追加
+          width: 'auto' // 幅を自動に設定
+        }}>
+          <Typography variant="h5" component="h1">
+            レシピ
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<AddIcon />}
+            onClick={() => setIsDialogOpen(true)}
+          >
+            新規レシピ
+          </Button>
         </Box>
-      </Box>
+      )}
+      
+      {!selectedRecipe && (
+        <Box sx={{ mb: 3 }}>
+          <Grid container spacing={2}>
+            {/* 検索フィールド */}
+            <Grid item xs={12} sm={6} md={6}>
+              <TextField
+                fullWidth
+                placeholder="レシピを検索..."
+                variant="outlined"
+                size="small"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon color="action" />
+                    </InputAdornment>
+                  )
+                }}
+              />
+            </Grid>
+            
+            {/* ソートセレクト */}
+            <Grid item xs={12} sm={6} md={3}>
+              <FormControl fullWidth size="small">
+                <InputLabel id="sort-label" sx={{ display: 'flex', alignItems: 'center' }}>
+                  <SortIcon sx={{ mr: 0.5, fontSize: '1.2rem' }} /> 並び順
+                </InputLabel>
+                <Select
+                  labelId="sort-label"
+                  value={sortOption}
+                  onChange={handleSortChange}
+                  label={<span><SortIcon /> 並び順</span>}
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            {/* 時間フィルター */}
+            <Grid item xs={6} sm={6} md={1.5}>
+              <FormControl fullWidth size="small">
+                <InputLabel id="time-filter-label">調理時間</InputLabel>
+                <Select
+                  labelId="time-filter-label"
+                  value={timeFilter}
+                  onChange={handleTimeFilterChange}
+                  label="調理時間"
+                >
+                  {FILTER_OPTIONS.cookingTime.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+          
+          {/* タグフィルター */}
+          <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
+              <FilterListIcon fontSize="small" sx={{ mr: 0.5 }} />
+              <Typography variant="body2" color="text.secondary">タグ:</Typography>
+            </Box>
+            {FILTER_OPTIONS.tags.map((tag) => (
+              <Button
+                key={tag}
+                variant={selectedTags.includes(tag) ? "contained" : "outlined"}
+                color="primary"
+                size="small"
+                onClick={() => handleTagToggle(tag)}
+                sx={{ 
+                  borderRadius: 4,
+                  py: 0.5,
+                  minWidth: 'auto',
+                  textTransform: 'none',
+                }}
+              >
+                {tag}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+      )}
       
       {selectedRecipe ? (
         <Box sx={{ mb: 3 }}>
@@ -403,6 +394,7 @@ const RecipePage: React.FC = () => {
           <RecipeDetails 
             recipe={selectedRecipeDetails!}
             onDelete={handleDeleteRecipe}
+            onUpdate={handleUpdateRecipe}
           />
         </Box>
       ) : (
@@ -412,14 +404,46 @@ const RecipePage: React.FC = () => {
             {filteredRecipes.length} 件のレシピが見つかりました
           </Typography>
           
-          <Grid container spacing={3}>
+          <Grid 
+            container 
+            spacing={2} // スペーシングを少し広げる
+            sx={{ 
+              justifyContent: 'flex-start',
+              mx: -1, // ネガティブマージンの調整
+            }}
+          >
             {currentPageRecipes.length > 0 ? (
               currentPageRecipes.map((recipe) => (
-                <Grid item key={recipe.id} xs={12} sm={6} md={4} lg={3}>
-                  <RecipeItem 
-                    recipe={recipe} 
-                    onClick={() => handleSelectRecipe(recipe.id)} 
-                  />
+                <Grid 
+                  item 
+                  key={recipe.id} 
+                  xs={12}     // モバイルでは1列
+                  sm={6}      // 小型タブレットでは2列
+                  md={4}      // タブレットでは3列
+                  lg={3}      // 中画面では4列
+                  xl={2.4}    // 大画面では5列
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center', // カードを中央に配置
+                  }}
+                >
+                  <Box 
+                    sx={{ 
+                      width: '100%', // 親要素の幅いっぱいに広げる
+                      maxWidth: { 
+                        xs: '100%', 
+                        sm: '340px',  // sm（600px以上）では340px
+                        md: '320px',  // md（900px以上）では280px
+                        lg: '320px',  // lg（1200px以上）では300px
+                        xl: '340px'   // xl（1536px以上）では290px
+                      }, // 画面サイズごとに最大幅を調整
+                    }}
+                  >
+                    <RecipeItem 
+                      recipe={recipe} 
+                      onClick={() => handleSelectRecipe(recipe.id)} 
+                    />
+                  </Box>
                 </Grid>
               ))
             ) : (
@@ -442,7 +466,6 @@ const RecipePage: React.FC = () => {
                     variant="outlined" 
                     onClick={() => {
                       setSearchQuery('');
-                      setDifficultyFilter('all');
                       setTimeFilter('all');
                       setSelectedTags([]);
                     }}
@@ -473,7 +496,7 @@ const RecipePage: React.FC = () => {
       )}
       
       {/* 新規レシピ作成ダイアログ */}
-      <NewRecipeDialog
+      <RecipeFormDialog
         open={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         onSave={handleAddRecipe}

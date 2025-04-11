@@ -11,19 +11,8 @@ import {
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
-// 難易度に対応するラベル
-const DIFFICULTY_LABELS: Record<string, string> = {
-  easy: '簡単',
-  medium: '普通',
-  hard: '難しい'
-};
-
-// 難易度に対応する色
-const DIFFICULTY_COLORS: Record<string, string> = {
-  easy: 'success',
-  medium: 'primary',
-  hard: 'error'
-};
+// グレーのダミー画像URL（実際のデプロイ時には差し替える）
+const DUMMY_IMAGE_URL = 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%22320%22 height%3D%22180%22 viewBox%3D%220 0 320 180%22 fill%3D%22%23e0e0e0%22%3E%3Crect width%3D%22320%22 height%3D%22180%22%2F%3E%3C%2Fsvg%3E';
 
 interface RecipeItemProps {
   recipe: {
@@ -32,7 +21,6 @@ interface RecipeItemProps {
     description: string;
     imageUrl: string;
     cookingTime: number;
-    difficulty: string;
     tags: string[];
     rating: number;
   };
@@ -40,20 +28,22 @@ interface RecipeItemProps {
 }
 
 const RecipeItem: React.FC<RecipeItemProps> = ({ recipe, onClick }) => {
-  const { name, description, imageUrl, cookingTime, difficulty, tags, rating } = recipe;
+  const { name, description, imageUrl, cookingTime, tags, rating } = recipe;
   
   return (
     <Card 
       elevation={2}
       sx={{ 
-        height: '100%',
+        height: 320, // 高さは固定
+        width: '100%', // 親要素の幅いっぱいに広げる
         display: 'flex',
         flexDirection: 'column',
         transition: 'transform 0.2s, box-shadow 0.2s',
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: 6,
-        }
+        },
+        // 最小幅と最大幅の制限を削除して親要素に合わせる
       }}
     >
       <CardActionArea 
@@ -68,16 +58,36 @@ const RecipeItem: React.FC<RecipeItemProps> = ({ recipe, onClick }) => {
         <CardMedia
           component="img"
           height="160"
-          image={imageUrl}
+          // ダミー画像を使用
+          image={DUMMY_IMAGE_URL}
           alt={name}
           sx={{
             objectFit: 'cover'
           }}
         />
         
-        <CardContent sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-          {/* レシピ名 */}
-          <Typography gutterBottom variant="h6" component="h2" sx={{ mb: 0.5, lineHeight: 1.3 }}>
+        <CardContent sx={{ 
+          p: 2, 
+          flexGrow: 1, 
+          display: 'flex', 
+          flexDirection: 'column',
+          height: 180 // 内容部分の高さを固定
+        }}>
+          {/* レシピ名 - 高さ固定 */}
+          <Typography 
+            gutterBottom 
+            variant="h6" 
+            component="h2" 
+            sx={{ 
+              mb: 0.5, 
+              lineHeight: 1.3,
+              height: 50, // タイトルの高さを固定
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
             {name}
           </Typography>
           
@@ -89,7 +99,7 @@ const RecipeItem: React.FC<RecipeItemProps> = ({ recipe, onClick }) => {
             </Typography>
           </Box>
           
-          {/* 説明文 */}
+          {/* 説明文 - 高さ固定 */}
           <Typography 
             variant="body2" 
             color="text.secondary"
@@ -101,17 +111,17 @@ const RecipeItem: React.FC<RecipeItemProps> = ({ recipe, onClick }) => {
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
               lineHeight: 1.3,
-              flexGrow: 1
+              height: 40, // 説明文の高さを固定
             }}
           >
             {description}
           </Typography>
           
-          {/* 調理時間と難易度 */}
+          {/* 調理時間（難易度を削除） */}
           <Box sx={{ 
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'flex-start', // 左寄せに変更
             mt: 'auto'
           }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -120,12 +130,6 @@ const RecipeItem: React.FC<RecipeItemProps> = ({ recipe, onClick }) => {
                 {cookingTime}分
               </Typography>
             </Box>
-            
-            <Chip 
-              label={DIFFICULTY_LABELS[difficulty]} 
-              color={DIFFICULTY_COLORS[difficulty] as "success" | "primary" | "error"}
-              size="small"
-            />
           </Box>
           
           {/* タグ（最初の1つだけ表示） */}

@@ -6,7 +6,6 @@ import {
   Button,
   Chip,
   Divider,
-  Rating,
   Dialog,
   DialogActions,
   DialogContent,
@@ -30,44 +29,23 @@ import ShareIcon from '@mui/icons-material/Share';
 import LocalDiningIcon from '@mui/icons-material/LocalDining';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import PersonIcon from '@mui/icons-material/Person';
+import RecipeFormDialog from './RecipeFormDialog';
 
-// 難易度に対応するラベル
-const DIFFICULTY_LABELS: Record<string, string> = {
-  easy: '簡単',
-  medium: '普通',
-  hard: '難しい'
+// グレーのダミー画像URL（実際のデプロイ時には差し替える）
+const DUMMY_IMAGE_URL = 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%22320%22 height%3D%22180%22 viewBox%3D%220 0 320 180%22 fill%3D%22%23e0e0e0%22%3E%3Crect width%3D%22320%22 height%3D%22180%22%2F%3E%3C%2Fsvg%3E';
+
+// カテゴリに対応するラベル
+const CATEGORY_LABELS: Record<string, string> = {
+  main: 'メイン料理',
+  side: '副菜',
+  soup: 'スープ・汁物',
+  salad: 'サラダ',
+  rice: 'ご飯もの',
+  noodle: '麺類',
+  dessert: 'デザート',
+  breakfast: '朝食',
+  other: 'その他'
 };
-
-// 難易度に対応する色
-const DIFFICULTY_COLORS: Record<string, string> = {
-  easy: 'success',
-  medium: 'primary',
-  hard: 'error'
-};
-
-// モック用の材料データ
-const MOCK_INGREDIENTS = [
-  { name: '牛肉（薄切り）', amount: '200g' },
-  { name: 'じゃがいも', amount: '2個' },
-  { name: 'にんじん', amount: '1本' },
-  { name: '玉ねぎ', amount: '1個' },
-  { name: 'しらたき', amount: '1袋' },
-  { name: '醤油', amount: '大さじ3' },
-  { name: '砂糖', amount: '大さじ2' },
-  { name: 'みりん', amount: '大さじ2' },
-  { name: '酒', amount: '大さじ1' },
-  { name: 'サラダ油', amount: '適量' },
-  { name: '水', amount: '300ml' }
-];
-
-// モック用の手順データ
-const MOCK_STEPS = [
-  'じゃがいも、にんじん、玉ねぎを一口大に切ります。しらたきは食べやすい長さに切ります。',
-  'フライパンに油を熱し、牛肉を炒めます。色が変わったら野菜を加えて炒めます。',
-  '水を加え、アクを取りながら中火で10分程度煮ます。',
-  '醤油、砂糖、みりん、酒を加えて味付けし、さらに15分程度煮込みます。',
-  '味が染み込んだら完成です。お好みで刻みねぎを散らしてお召し上がりください。'
-];
 
 interface RecipeDetailsProps {
   recipe: {
@@ -76,25 +54,43 @@ interface RecipeDetailsProps {
     description: string;
     imageUrl: string;
     cookingTime: number;
-    difficulty: string;
+    prepTime?: number;
+    servings?: number;
+    category?: string;
     tags: string[];
-    rating: number;
     createdAt: string;
+    ingredients?: Array<{ id: string; name: string; amount: string; unit: string }>;
+    steps?: Array<{ id: string; description: string }>;
   };
   onDelete: (id: string) => void;
+  onUpdate?: (updatedRecipe: any) => void;
 }
 
-const RecipeDetails: React.FC<RecipeDetailsProps> = ({ recipe, onDelete }) => {
-  const { id, name, description, imageUrl, cookingTime, difficulty, tags, rating } = recipe;
+const RecipeDetails: React.FC<RecipeDetailsProps> = ({ recipe, onDelete, onUpdate }) => {
+  const { id, name, description, imageUrl, cookingTime, tags } = recipe;
   
   // 状態
   const [isFavorite, setIsFavorite] = useState(false);
-  const [userRating, setUserRating] = useState<number | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   
   // タブセクションの状態
   const [activeSection, setActiveSection] = useState<'ingredients' | 'steps'>('ingredients');
-  
+
+  // レシピ更新処理
+  const handleUpdateRecipe = (updatedRecipe: any) => {
+    if (onUpdate) {
+      // 既存のデータと更新データをマージ
+      const mergedRecipe = {
+        ...recipe,
+        ...updatedRecipe,
+        imageUrl: recipe.imageUrl, // 画像URLは既存のものを保持
+      };
+      onUpdate(mergedRecipe);
+    }
+    setEditDialogOpen(false);
+  };
+
   // お気に入りの切り替え
   const handleToggleFavorite = () => {
     setIsFavorite(!isFavorite);
@@ -127,7 +123,7 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({ recipe, onDelete }) => {
           {/* レシピ画像 */}
           <Box
             component="img"
-            src={imageUrl}
+            src={imageUrl || DUMMY_IMAGE_URL}
             alt={name}
             sx={{
               width: '100%',
@@ -155,7 +151,7 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({ recipe, onDelete }) => {
             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
               <IconButton 
                 sx={{ color: 'white', bgcolor: 'rgba(0,0,0,0.2)', mr: 1 }}
-                onClick={() => console.log('Edit recipe')}
+                onClick={() => setEditDialogOpen(true)}
               >
                 <EditIcon />
               </IconButton>
@@ -192,20 +188,6 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({ recipe, onDelete }) => {
                   <AccessTimeIcon fontSize="small" sx={{ color: 'white', mr: 0.5 }} />
                   <Typography variant="body2" sx={{ color: 'white' }}>
                     {cookingTime}分
-                  </Typography>
-                </Box>
-                
-                <Chip 
-                  label={DIFFICULTY_LABELS[difficulty]} 
-                  color={DIFFICULTY_COLORS[difficulty] as "success" | "primary" | "error"}
-                  size="small"
-                  sx={{ height: 24 }}
-                />
-                
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Rating value={rating} precision={0.5} size="small" readOnly />
-                  <Typography variant="body2" sx={{ ml: 0.5, color: 'white' }}>
-                    {rating.toFixed(1)}
                   </Typography>
                 </Box>
               </Box>
@@ -265,27 +247,33 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({ recipe, onDelete }) => {
                   <LocalDiningIcon sx={{ mr: 1 }} />
                   材料
                   <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
-                    2人前
+                    {recipe.servings || 2}人前
                   </Typography>
                 </Typography>
                 
                 <Divider sx={{ mb: 2 }} />
                 
                 <List sx={{ pt: 0 }}>
-                  {MOCK_INGREDIENTS.map((ingredient, index) => (
-                    <React.Fragment key={index}>
-                      <ListItem sx={{ py: 1 }}>
-                        <ListItemText 
-                          primary={ingredient.name} 
-                          sx={{ flex: '1 1 70%' }}
-                        />
-                        <Typography variant="body2" color="text.secondary" sx={{ flex: '1 1 30%', textAlign: 'right' }}>
-                          {ingredient.amount}
-                        </Typography>
-                      </ListItem>
-                      {index < MOCK_INGREDIENTS.length - 1 && <Divider component="li" />}
-                    </React.Fragment>
-                  ))}
+                  {recipe.ingredients && recipe.ingredients.length > 0 ? (
+                    recipe.ingredients.map((ingredient, index) => (
+                      <React.Fragment key={ingredient.id || index}>
+                        <ListItem sx={{ py: 1 }}>
+                          <ListItemText 
+                            primary={ingredient.name} 
+                            sx={{ flex: '1 1 70%' }}
+                          />
+                          <Typography variant="body2" color="text.secondary" sx={{ flex: '1 1 30%', textAlign: 'right' }}>
+                            {ingredient.amount} {ingredient.unit}
+                          </Typography>
+                        </ListItem>
+                        {index < (recipe.ingredients?.length || 0) - 1 && <Divider component="li" />}
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                      材料情報がありません
+                    </Typography>
+                  )}
                 </List>
               </CardContent>
             </Card>
@@ -303,26 +291,32 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({ recipe, onDelete }) => {
                 <Divider sx={{ mb: 2 }} />
                 
                 <List sx={{ pt: 0 }}>
-                  {MOCK_STEPS.map((step, index) => (
-                    <React.Fragment key={index}>
-                      <ListItem alignItems="flex-start" sx={{ py: 1.5 }}>
-                        <Avatar 
-                          sx={{ 
-                            bgcolor: 'primary.main', 
-                            width: 28, 
-                            height: 28, 
-                            fontSize: '0.875rem',
-                            mr: 2,
-                            mt: 0.5
-                          }}
-                        >
-                          {index + 1}
-                        </Avatar>
-                        <ListItemText primary={step} />
-                      </ListItem>
-                      {index < MOCK_STEPS.length - 1 && <Divider component="li" />}
-                    </React.Fragment>
-                  ))}
+                  {recipe.steps && recipe.steps.length > 0 ? (
+                    recipe.steps.map((step, index) => (
+                      <React.Fragment key={step.id || index}>
+                        <ListItem alignItems="flex-start" sx={{ py: 1.5 }}>
+                          <Avatar 
+                            sx={{ 
+                              bgcolor: 'primary.main', 
+                              width: 28, 
+                              height: 28, 
+                              fontSize: '0.875rem',
+                              mr: 2,
+                              mt: 0.5
+                            }}
+                          >
+                            {index + 1}
+                          </Avatar>
+                          <ListItemText primary={step.description} />
+                        </ListItem>
+                        {index < (recipe.steps?.length || 0) - 1 && <Divider component="li" />}
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                      調理手順情報がありません
+                    </Typography>
+                  )}
                 </List>
               </CardContent>
             </Card>
@@ -337,29 +331,6 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({ recipe, onDelete }) => {
             <Typography variant="body2">
               {formattedDate}に作成
             </Typography>
-          </Box>
-          
-          {/* ユーザー評価セクション */}
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="subtitle1" gutterBottom>
-              このレシピを評価する
-            </Typography>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Rating
-                name="user-rating"
-                value={userRating}
-                precision={0.5}
-                onChange={(event, newValue) => {
-                  setUserRating(newValue);
-                }}
-                size="large"
-              />
-              {userRating !== null && (
-                <Typography variant="body2" sx={{ ml: 1 }}>
-                  {userRating}
-                </Typography>
-              )}
-            </Box>
           </Box>
         </Box>
       </Paper>
@@ -379,6 +350,14 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({ recipe, onDelete }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* 編集ダイアログ */}
+      <RecipeFormDialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        onSave={handleUpdateRecipe}
+        editRecipe={recipe}
+      />
     </Box>
   );
 };
