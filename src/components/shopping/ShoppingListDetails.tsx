@@ -16,12 +16,15 @@ import {
   MenuItem,
   InputAdornment,
   Paper,
-  LinearProgress
+  LinearProgress,
+  Collapse
 } from '@mui/material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { green } from '@mui/material/colors';
@@ -109,6 +112,10 @@ const ShoppingListDetails: React.FC<ShoppingListDetailsProps> = ({ list }) => {
   const [editName, setEditName] = useState(name);
   const [editDescription, setEditDescription] = useState(description || '');
   
+  // 新しい状態: 折りたたみ管理用
+  const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
+  const [isAddItemExpanded, setIsAddItemExpanded] = useState(false);
+  
   // 日付のフォーマット
   const formattedDate = dueDate 
     ? format(new Date(dueDate), 'yyyy年M月d日(E)', { locale: ja }) 
@@ -177,7 +184,7 @@ const ShoppingListDetails: React.FC<ShoppingListDetailsProps> = ({ list }) => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* ヘッダー部分 */}
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ mb: 1 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {isEditing ? (
             <TextField
@@ -194,55 +201,75 @@ const ShoppingListDetails: React.FC<ShoppingListDetailsProps> = ({ list }) => {
             </Typography>
           )}
           
-          <Button
-            startIcon={isEditing ? null : <EditIcon />}
-            onClick={toggleEditMode}
-            color={isEditing ? 'primary' : 'inherit'}
-            variant={isEditing ? 'contained' : 'text'}
-            size="small"
-          >
-            {isEditing ? '保存' : '編集'}
-          </Button>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Button
+              startIcon={isDetailsExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              onClick={() => setIsDetailsExpanded(!isDetailsExpanded)}
+              color="inherit"
+              size="small"
+            >
+              詳細
+            </Button>
+            
+            <Button
+              startIcon={isEditing ? null : <EditIcon />}
+              onClick={toggleEditMode}
+              color={isEditing ? 'primary' : 'inherit'}
+              variant={isEditing ? 'contained' : 'text'}
+              size="small"
+            >
+              {isEditing ? '保存' : '編集'}
+            </Button>
+          </Box>
         </Box>
         
-        {isEditing ? (
-          <TextField
-            value={editDescription}
-            onChange={(e) => setEditDescription(e.target.value)}
-            fullWidth
-            placeholder="説明を入力..."
-            variant="outlined"
-            size="small"
-            multiline
-            rows={2}
-            sx={{ mt: 1 }}
-          />
-        ) : description ? (
-          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-            {description}
-          </Typography>
-        ) : null}
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-          {formattedDate && (
-            <Box sx={{ display: 'flex', alignItems: 'center', mr: 2 }}>
-              <EventIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
-              <Typography variant="body2" color="textSecondary">
-                {formattedDate}
+        {/* 詳細情報（折りたたみ可能） */}
+        <Collapse in={isDetailsExpanded}>
+          <Box sx={{ mt: 1, mb: 1, px: 1, py: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
+            {isEditing ? (
+              <TextField
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                fullWidth
+                placeholder="説明を入力..."
+                variant="outlined"
+                size="small"
+                multiline
+                rows={2}
+                sx={{ mb: 1 }}
+              />
+            ) : description ? (
+              <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                {description}
               </Typography>
+            ) : (
+              <Typography variant="body2" color="textSecondary" sx={{ mb: 1, fontStyle: 'italic' }}>
+                説明はありません
+              </Typography>
+            )}
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+              {formattedDate && (
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <EventIcon fontSize="small" color="action" sx={{ mr: 0.5 }} />
+                  <Typography variant="body2" color="textSecondary">
+                    {formattedDate}
+                  </Typography>
+                </Box>
+              )}
+              
+              <Chip 
+                label={isCompleted ? '完了' : '進行中'} 
+                size="small"
+                color={isCompleted ? 'success' : 'primary'}
+                variant={isCompleted ? 'filled' : 'outlined'}
+              />
             </Box>
-          )}
-          
-          <Chip 
-            label={isCompleted ? '完了' : '進行中'} 
-            size="small"
-            color={isCompleted ? 'success' : 'primary'}
-            variant={isCompleted ? 'filled' : 'outlined'}
-          />
-        </Box>
+          </Box>
+        </Collapse>
         
-        {/* 進捗バー */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+        {/* 進捗バー - 常に表示 */}
+        <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
           <Box sx={{ flex: 1, mr: 1 }}>
             <LinearProgress 
               variant="determinate" 
@@ -259,85 +286,94 @@ const ShoppingListDetails: React.FC<ShoppingListDetailsProps> = ({ list }) => {
       
       <Divider />
       
-      {/* 新規アイテム追加フォーム */}
-      <Paper elevation={0} sx={{ p: 2, mt: 2, bgcolor: 'background.default' }}>
-        <Typography variant="subtitle2" component="h3" sx={{ mb: 1 }}>
-          アイテムを追加
-        </Typography>
-        
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
-          <TextField
-            size="small"
-            placeholder="商品名"
-            value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
-            sx={{ flex: 2 }}
-          />
-          
-          <TextField
-            size="small"
-            placeholder="数量"
-            type="number"
-            inputProps={{ min: "0", step: "0.1" }}
-            value={newItemAmount}
-            onChange={(e) => setNewItemAmount(e.target.value)}
-            sx={{ flex: 1, minWidth: { xs: '100%', sm: '100px' } }}
-          />
-          
-          <TextField
-            size="small"
-            select
-            value={newItemUnit}
-            onChange={(e) => setNewItemUnit(e.target.value)}
-            sx={{ flex: 1, minWidth: { xs: '100%', sm: '100px' } }}
-          >
-            {ITEM_UNITS.map((unit) => (
-              <MenuItem key={unit} value={unit}>
-                {unit}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Box>
-        
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, mt: 1 }}>
-          <TextField
-            size="small"
-            select
-            label="カテゴリー"
-            value={newItemCategory}
-            onChange={(e) => setNewItemCategory(e.target.value)}
-            sx={{ flex: 1 }}
-          >
-            {ITEM_CATEGORIES.map((category) => (
-              <MenuItem key={category} value={category}>
-                {category}
-              </MenuItem>
-            ))}
-          </TextField>
-          
-          <TextField
-            size="small"
-            placeholder="メモ（オプション）"
-            value={newItemNotes}
-            onChange={(e) => setNewItemNotes(e.target.value)}
-            sx={{ flex: 2 }}
-          />
-          
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddCircleIcon />}
-            onClick={handleAddItem}
-            disabled={!newItemName.trim()}
-            sx={{ height: { sm: 40 } }}
-          >
-            追加
-          </Button>
-        </Box>
-      </Paper>
+      {/* アイテム追加ボタン */}
+      <Button
+        variant="text"
+        color="primary"
+        startIcon={isAddItemExpanded ? <ExpandLessIcon /> : <AddCircleIcon />}
+        onClick={() => setIsAddItemExpanded(!isAddItemExpanded)}
+        sx={{ my: 1, justifyContent: 'flex-start' }}
+      >
+        {isAddItemExpanded ? 'フォームを閉じる' : 'アイテムを追加'}
+      </Button>
       
-      {/* アイテムリスト */}
-      <Box sx={{ flex: 1, overflow: 'auto', mt: 2 }}>
+      {/* 新規アイテム追加フォーム（折りたたみ可能） */}
+      <Collapse in={isAddItemExpanded}>
+        <Paper elevation={0} sx={{ p: 2, mb: 2, bgcolor: 'background.default' }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
+            <TextField
+              size="small"
+              placeholder="商品名"
+              value={newItemName}
+              onChange={(e) => setNewItemName(e.target.value)}
+              sx={{ flex: 2 }}
+            />
+            
+            <TextField
+              size="small"
+              placeholder="数量"
+              type="number"
+              inputProps={{ min: "0", step: "0.1" }}
+              value={newItemAmount}
+              onChange={(e) => setNewItemAmount(e.target.value)}
+              sx={{ flex: 1, minWidth: { xs: '100%', sm: '100px' } }}
+            />
+            
+            <TextField
+              size="small"
+              select
+              value={newItemUnit}
+              onChange={(e) => setNewItemUnit(e.target.value)}
+              sx={{ flex: 1, minWidth: { xs: '100%', sm: '100px' } }}
+            >
+              {ITEM_UNITS.map((unit) => (
+                <MenuItem key={unit} value={unit}>
+                  {unit}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Box>
+          
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, mt: 1 }}>
+            <TextField
+              size="small"
+              select
+              label="カテゴリー"
+              value={newItemCategory}
+              onChange={(e) => setNewItemCategory(e.target.value)}
+              sx={{ flex: 1 }}
+            >
+              {ITEM_CATEGORIES.map((category) => (
+                <MenuItem key={category} value={category}>
+                  {category}
+                </MenuItem>
+              ))}
+            </TextField>
+            
+            <TextField
+              size="small"
+              placeholder="メモ（オプション）"
+              value={newItemNotes}
+              onChange={(e) => setNewItemNotes(e.target.value)}
+              sx={{ flex: 2 }}
+            />
+            
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<AddCircleIcon />}
+              onClick={handleAddItem}
+              disabled={!newItemName.trim()}
+              sx={{ height: { sm: 40 } }}
+            >
+              追加
+            </Button>
+          </Box>
+        </Paper>
+      </Collapse>
+      
+      {/* アイテムリスト - 最大限のスペースを確保 */}
+      <Box sx={{ flex: 1, overflow: 'auto', mt: 1 }}>
         {Object.keys(itemsByCategory).length === 0 ? (
           <Box sx={{ 
             display: 'flex', 
@@ -353,7 +389,7 @@ const ShoppingListDetails: React.FC<ShoppingListDetailsProps> = ({ list }) => {
           </Box>
         ) : (
           Object.entries(itemsByCategory).map(([category, categoryItems]) => (
-            <Box key={category} sx={{ mb: 3 }}>
+            <Box key={category} sx={{ mb: 2 }}>
               <Typography
                 variant="subtitle2"
                 component="h3"
