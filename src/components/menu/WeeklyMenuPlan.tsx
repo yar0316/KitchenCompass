@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   Grid, 
@@ -9,17 +9,16 @@ import {
   Chip,
   Divider,
   IconButton,
-  List,
-  ListItem
+  List
 } from '@mui/material';
 import BreakfastDiningIcon from '@mui/icons-material/BreakfastDining';
 import LunchDiningIcon from '@mui/icons-material/LunchDining';
 import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import EditIcon from '@mui/icons-material/Edit';
 import AddIcon from '@mui/icons-material/Add';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { 
   DndContext, 
   closestCenter, 
@@ -27,16 +26,20 @@ import {
   useSensor, 
   useSensors, 
   DragEndEvent,
+  DragOverlay,
   DragStartEvent,
-  DragOverEvent 
+  Active,
+  UniqueIdentifier,
+  useDroppable
 } from '@dnd-kit/core';
 import {
   SortableContext,
-  arrayMove,
   verticalListSortingStrategy,
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { format } from 'date-fns';
+import { ja } from 'date-fns/locale';
 
 interface MenuItem {
   id: string;
@@ -69,21 +72,159 @@ interface WeekData {
 interface WeeklyMenuPlanProps {
   weekData: WeekData;
   onMealClick: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner', existingMeal?: MealData) => void;
+  onRecipeClick?: (recipeId: string) => void;  // レシピIDを受け取って詳細を表示するための関数
   viewUnit: 'day' | 'threeDay' | 'week';
   onNext?: () => void;
   onPrevious?: () => void;
   onMoveMeal?: (meal: MealData, fromDate: Date, toDate: Date, toType: 'breakfast' | 'lunch' | 'dinner') => void;
 }
 
+// ドラッグ中アイテムのプレビュー用コンポーネント
+const DragOverlayContent = ({ active }: { active: Active | null }) => {
+  if (!active) return null;
+  
+  const { id, data } = active;
+  const isMenuItem = id.toString().startsWith('item-');
+  
+  if (isMenuItem && data.current) {
+    const { item } = data.current;
+    return (
+      <Card
+        variant="outlined"
+        sx={{
+          width: '200px',
+          backgroundColor: 'primary.50',
+          borderColor: 'primary.main',
+          boxShadow: 3,
+          opacity: 0.9
+        }}
+      >
+        <Box sx={{ p: 1 }}>
+          <Typography variant="body2">{item.name}</Typography>
+        </Box>
+      </Card>
+    );
+  }
+  
+  return null;
+};
+
+// MenuItemCard コンポーネント（個別のメニューアイテム）
+const MenuItemCard = ({ 
+  item, 
+  date, 
+  mealType, 
+  index,
+  onItemClick 
+}: { 
+  item: MenuItem; 
+  date: Date; 
+  mealType: 'breakfast' | 'lunch' | 'dinner';
+  index: number;
+  onItemClick: () => void; 
+}) => {
+  // ユニークなID生成（日付+食事タイプ+アイテムID）
+  const itemId = `item-${date.toISOString()}-${mealType}-${item.id}`;
+  
+  // DnD-kitのドラッグ機能を使用
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({
+    id: itemId,
+    data: {
+      type: 'menuItem',
+      item,
+      date,
+      mealType,
+      isMenuItem: true  // これがメニューアイテム単体であることを明示
+    }
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 100 : 1,
+  };
+
+  // クリック時の処理を制御
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // イベントの伝搬を止める
+    onItemClick();
+  };
+
+  return (
+    <Card
+      ref={setNodeRef}
+      variant="outlined"
+      sx={{
+        mb: 0.5,
+        display: 'flex',
+        bgcolor: 'background.paper',
+        position: 'relative',
+        border: '1px solid',
+        borderColor: isDragging ? 'primary.main' : 'divider',
+        ...style,
+        cursor: 'grab', // ドラッグ可能であることを示すカーソル
+      }}
+      {...attributes}
+      {...listeners}
+    >
+      <CardActionArea 
+        onClick={handleClick}
+        sx={{ 
+          display: 'flex', 
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          p: 0.75,
+          px: 1.5
+        }}
+      >
+        <Typography 
+          variant="body2" 
+          sx={{ 
+            fontWeight: item.recipeId ? 500 : 400,
+            mr: 1
+          }}
+        >
+          {item.name}
+        </Typography>
+        
+        {item.recipeId && (
+          <Chip 
+            label="レシピ" 
+            size="small" 
+            color="primary" 
+            variant="outlined"
+            sx={{ 
+              height: 20, 
+              fontSize: '0.625rem',
+              '& .MuiChip-label': { px: 0.5 }
+            }}
+          />
+        )}
+      </CardActionArea>
+    </Card>
+  );
+};
+
 // ドラッグ可能な献立アイテムコンポーネント
 const DraggableMealItem = ({ 
   meal, 
   date, 
-  onMealClick 
+  onMealClick,
+  onRecipeClick
 }: { 
   meal: MealData; 
   date: Date; 
   onMealClick: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner', existingMeal?: MealData) => void;
+  onRecipeClick?: (recipeId: string) => void;
 }) => {
   // ユニークなID（日付 + タイプ + ID）
   const itemId = `${date.toISOString()}-${meal.type}-${meal.id}`;
@@ -101,7 +242,8 @@ const DraggableMealItem = ({
     data: {
       type: 'meal',
       meal,
-      date
+      date,
+      mealType: meal.type
     }
   });
 
@@ -164,6 +306,25 @@ const DraggableMealItem = ({
   const isEmpty = menuItems.length === 0;
   const isOuting = meal.isOuting;
 
+  // 個別のメニューアイテムのIDリストを生成（ドラッグ＆ドロップ用）
+  const menuItemIds = menuItems.map((item) => 
+    `item-${date.toISOString()}-${meal.type}-${item.id}`
+  );
+
+  // メニューアイテムクリック時の処理
+  const handleItemClick = (item: MenuItem) => {
+    if (item.recipeId && onRecipeClick) {
+      onRecipeClick(item.recipeId);
+    } else {
+      onMealClick(date, meal.type, meal);
+    }
+  };
+
+  // カード全体のクリックハンドラ（献立追加や編集用）
+  const handleCardClick = () => {
+    onMealClick(date, meal.type, meal);
+  };
+
   return (
     <Card 
       ref={setNodeRef}
@@ -180,21 +341,13 @@ const DraggableMealItem = ({
         '&:hover': {
           borderColor: 'primary.main',
         },
+        position: 'relative', // ドラッグハンドルの配置のため追加
         ...style
       }}
-      {...attributes}
-      {...listeners}
     >
-      <CardActionArea
-        onClick={() => onMealClick(date, meal.type, meal)}
-        sx={{ 
-          p: 1,
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-        }}
+      <Box 
+        sx={{ p: 1 }}
+        onClick={handleCardClick} // クリックで編集ダイアログを開く
       >
         <Box sx={{ 
           width: '100%',
@@ -266,79 +419,165 @@ const DraggableMealItem = ({
                 {meal.restaurantName || '外食'}
               </Typography>
             ) : (
-              // 通常の献立表示（複数アイテムまたは単一アイテム）
+              // 通常の献立表示（カード形式）
               hasMultipleItems ? (
-                <List dense disablePadding sx={{ width: '100%', py: 0 }}>
-                  {menuItems.slice(0, 2).map((item, index) => (
-                    <ListItem 
-                      key={item.id} 
-                      disablePadding 
-                      disableGutters
-                      sx={{ py: 0 }}
-                    >
-                      <Typography 
-                        variant="body2" 
-                        sx={{ 
-                          width: '100%',
-                          lineHeight: 1.2,
-                          fontSize: '0.8rem',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          pointerEvents: 'none', // クリックイベントが二重に発生しないようにする
-                        }}
-                      >
-                        {item.name}
-                      </Typography>
-                    </ListItem>
-                  ))}
-                  {menuItems.length > 2 && (
-                    <Typography 
-                      variant="caption" 
-                      color="text.secondary" 
-                      sx={{ 
-                        fontStyle: 'italic',
-                        pointerEvents: 'none'
+                <Box sx={{ mt: 0.5 }}>
+                  <SortableContext items={menuItemIds} strategy={verticalListSortingStrategy}>
+                    {menuItems.map((item, index) => (
+                      <MenuItemCard
+                        key={item.id}
+                        item={item}
+                        date={date}
+                        mealType={meal.type}
+                        index={index}
+                        onItemClick={() => handleItemClick(item)}
+                      />
+                    ))}
+                  </SortableContext>
+                  
+                  {/* 5つ以上の場合は省略表示 */}
+                  {menuItems.length > 4 && (
+                    <Box
+                      sx={{
+                        mt: 0.5,
+                        p: 0.5,
+                        textAlign: 'center',
+                        borderTop: '1px dashed',
+                        borderColor: 'divider'
                       }}
                     >
-                      他{menuItems.length - 2}品...
-                    </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ fontStyle: 'italic' }}
+                      >
+                        他{menuItems.length - 4}品...
+                      </Typography>
+                    </Box>
                   )}
-                </List>
+                </Box>
               ) : (
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    width: '100%',
-                    lineHeight: 1.3,
-                    fontSize: '0.875rem',
-                    display: '-webkit-box',
-                    overflow: 'hidden',
-                    WebkitBoxOrient: 'vertical',
-                    WebkitLineClamp: 2,
-                    pointerEvents: 'none', // クリックイベントが二重に発生しないようにする
-                  }}
-                >
-                  {menuItems[0]?.name || ''}
-                </Typography>
+                // 単一アイテムの場合もカード表示
+                <Box sx={{ mt: 0.5 }}>
+                  <SortableContext items={menuItemIds} strategy={verticalListSortingStrategy}>
+                    <MenuItemCard
+                      item={menuItems[0]}
+                      date={date}
+                      mealType={meal.type}
+                      index={0}
+                      onItemClick={() => handleItemClick(menuItems[0])}
+                    />
+                  </SortableContext>
+                </Box>
               )
             )}
           </Box>
         ) : (
-          <Box sx={{ 
-            display: 'flex',
-            alignItems: 'center',
-            color: 'text.secondary',
-            width: '100%',
-            justifyContent: 'center',
-            pointerEvents: 'none', // クリックイベントが二重に発生しないようにする
-          }}>
-            <AddIcon fontSize="small" sx={{ mr: 0.5 }} />
-            <Typography variant="body2">追加</Typography>
+          <Box
+            sx={{ 
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              width: '100%',
+              height: 50,
+              cursor: 'pointer'
+            }}
+          >
+            <Typography 
+              variant="body2" 
+              color="text.secondary"
+              sx={{
+                display: 'flex',
+                alignItems: 'center'
+              }}
+            >
+              <AddIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
+              メニューを追加
+            </Typography>
           </Box>
         )}
-      </CardActionArea>
+      </Box>
     </Card>
+  );
+};
+
+// ドロップ可能なゾーン
+const DroppableMealZone = ({
+  children,
+  date,
+  mealType,
+  onMealClick,
+}: {
+  children: React.ReactNode;
+  date: Date;
+  mealType: 'breakfast' | 'lunch' | 'dinner';
+  onMealClick: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner', existingMeal?: MealData) => void;
+}) => {
+  const { isOver, setNodeRef } = useDroppable({
+    id: `drop-${date.toISOString()}-${mealType}`,
+    data: {
+      date,
+      mealType
+    }
+  });
+
+  // 空の領域をクリックしたときのハンドラ
+  const handleZoneClick = (e: React.MouseEvent) => {
+    // カード内のクリックイベントが伝播してきた場合は処理しない
+    if ((e.target as HTMLElement).closest('.MuiCardActionArea-root')) {
+      return;
+    }
+
+    // まずは対応するメニュー項目があるかを検索
+    // カード内の子要素からメニューデータを取得しようとする
+    const cardElement = (e.currentTarget as HTMLElement).querySelector('.MuiCard-root');
+    const mealComponent = cardElement ? cardElement.querySelector('[data-meal]') : null;
+    
+    let existingMeal: MealData | undefined;
+    
+    // コンポーネントからデータ属性経由でメニューデータを取得できるかを試みる
+    if (mealComponent && mealComponent.getAttribute('data-meal')) {
+      try {
+        existingMeal = JSON.parse(mealComponent.getAttribute('data-meal') || '');
+      } catch (error) {
+        console.error('Failed to parse meal data:', error);
+      }
+    }
+    
+    // リアクトの子コンポーネントからプロパティを取得する試みは難しいので、
+    // childrenの中から直接DraggableMealItemコンポーネントとそのpropsを取得するのは複雑
+    // そのため、React.Children.mapなどを使わずに、実装を簡略化
+    
+    if (existingMeal) {
+      // 既存のメニューデータがある場合はそれを使う
+      onMealClick(date, mealType, existingMeal);
+    } else {
+      // 見つからない場合は空のメニューデータを生成
+      const emptyMeal = {
+        id: `empty-${date.toISOString()}-${mealType}`,
+        name: '',
+        type: mealType,
+        recipeId: null
+      };
+      onMealClick(date, mealType, emptyMeal);
+    }
+  };
+
+  return (
+    <Box 
+      ref={setNodeRef} 
+      sx={{
+        flexGrow: 1,
+        position: 'relative',
+        bgcolor: isOver ? 'primary.50' : 'transparent',
+        borderRadius: 1,
+        transition: 'background-color 0.2s',
+        cursor: 'pointer' // クリック可能を示す
+      }}
+      onClick={handleZoneClick} // クリックハンドラを追加
+    >
+      {children}
+    </Box>
   );
 };
 
@@ -346,24 +585,30 @@ const DraggableMealItem = ({
 const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({ 
   weekData, 
   onMealClick,
+  onRecipeClick,
   viewUnit,
   onNext,
   onPrevious,
   onMoveMeal
 }) => {
+  // ドラッグしているアイテムの状態
+  const [activeItem, setActiveItem] = useState<Active | null>(null);
+  // ステータスは内部でのみ使用し、表示しない
+  const [status, setStatus] = useState<string | null>(null);
+  
   // ドラッグ操作のセンサーを定義（ポインター操作のみ）
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        // ドラッグ開始の移動距離を設定（ピクセル単位）
-        distance: 8,
+        // ドラッグ開始の判定距離を小さくして反応を良くする（1pxに設定）
+        distance: 1,
       }
     })
   );
   
-  // 月日の表示形式
+  // 月日と曜日の表示形式
   const formatDate = (date: Date) => {
-    return `${date.getMonth() + 1}/${date.getDate()}`;
+    return format(date, 'M/d(E)', { locale: ja });
   };
   
   // 今日の日付かどうかをチェック
@@ -374,31 +619,133 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
            date.getFullYear() === today.getFullYear();
   };
 
+  // ドラッグ開始時のハンドラー
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveItem(event.active);
+  };
+
   // ドラッグ終了時のハンドラー
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveItem(null);
     
-    if (!over || active.id === over.id) return;
+    if (!over) {
+      return;
+    }
+    
+    if (active.id === over.id) {
+      return;
+    }
 
-    // ドラッグしているアイテムの情報を取得
-    const activeId = active.id as string;
-    const [activeDateStr, activeType] = activeId.split('-');
-    const activeDate = new Date(activeDateStr);
-    const activeMealType = activeType as 'breakfast' | 'lunch' | 'dinner';
-    const activeMeal = (active.data.current as any).meal;
-    
-    // ドロップ先の情報を取得
-    const overId = over.id as string;
-    const [overDateStr, overType] = overId.split('-');
-    const overDate = new Date(overDateStr);
-    const overMealType = overType as 'breakfast' | 'lunch' | 'dinner';
-    
-    // 移動処理をトリガー
-    if (onMoveMeal) {
-      onMoveMeal(activeMeal, activeDate, overDate, overMealType);
+    try {
+      // ドラッグしたアイテムのデータを取得
+      const activeData = active.data.current as any;
+      if (!activeData) {
+        return;
+      }
+      
+      // ドロップ先のデータを取得
+      const overData = over.data.current as any;
+      if (!overData) {
+        return;
+      }
+      
+      // メニューアイテムか食事枠全体かを判断
+      const isMenuItem = typeof active.id === 'string' && active.id.toString().includes('item-');
+      const isActiveAMeal = activeData.meal || activeData.mealType;
+      
+      // ドロップ先の情報を収集
+      let targetDate: Date | null = null;
+      let targetType: 'breakfast' | 'lunch' | 'dinner' | null = null;
+      
+      // ドロップ先から情報を抽出
+      if (overData.date) {
+        targetDate = overData.date;
+      }
+      
+      if (overData.mealType) {
+        // ドロップ先にmealTypeがある場合
+        targetType = overData.mealType;
+      } else if (overData.meal && overData.meal.type) {
+        // ドロップ先にmeal.typeがある場合
+        targetType = overData.meal.type;
+      } else if (typeof over.id === 'string') {
+        // IDから食事タイプを抽出する試み
+        const overId = over.id.toString();
+        if (overId.includes('drop-') && overId.includes('-breakfast')) {
+          targetType = 'breakfast';
+        } else if (overId.includes('drop-') && overId.includes('-lunch')) {
+          targetType = 'lunch';
+        } else if (overId.includes('drop-') && overId.includes('-dinner')) {
+          targetType = 'dinner';
+        }
+        
+        // ドロップゾーンIDから日付を抽出
+        // 形式: drop-ISO日付-食事タイプ
+        if (overId.includes('drop-')) {
+          const parts = overId.split('-');
+          if (parts.length >= 3) {
+            // ISO日付部分を取得
+            const dateStr = parts[1];
+            try {
+              targetDate = new Date(dateStr);
+            } catch (e) {
+            }
+          }
+        }
+      }
+      
+      // 必要なデータがすべて揃っているか確認
+      if (!targetDate || !targetType) {
+        return;
+      }
+      
+      // 移動元の情報を収集
+      let sourceDate: Date | null = null;
+      let sourceType: 'breakfast' | 'lunch' | 'dinner' | null = null;
+      let mealToMove: any = null;
+      
+      if (isMenuItem && activeData.item) {
+        // メニューアイテムの場合
+        const { item, date, mealType } = activeData;
+        sourceDate = date;
+        sourceType = mealType;
+        mealToMove = {
+          id: item.id,
+          name: item.name,
+          type: mealType,
+          recipeId: item.recipeId
+        };
+      } else if (isActiveAMeal) {
+        // 食事枠全体の場合
+        sourceDate = activeData.date;
+        sourceType = activeData.meal ? activeData.meal.type : activeData.mealType;
+        mealToMove = activeData.meal || {
+          id: `meal-${Date.now()}`,
+          name: '',
+          type: sourceType,
+          recipeId: null
+        };
+      } else {
+        return;
+      }
+      
+      // 移動元の情報が揃っているか確認
+      if (!sourceDate || !sourceType || !mealToMove) {
+        return;
+      }
+      
+      // 親コンポーネントのコールバックを呼び出す前の最終確認
+      if (!onMoveMeal) {
+        return;
+      }
+      
+      // 親コンポーネントのコールバックを呼び出し
+      onMoveMeal(mealToMove, sourceDate, targetDate, targetType);
+    } catch (error) {
     }
   };
-  
+
   // 表示単位に応じたタイトル表示
   const renderUnitTitle = () => {
     if (weekData.days.length === 0) return null;
@@ -407,7 +754,7 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
       const day = weekData.days[0]; // 1日表示の場合は最初（唯一）の日
       return (
         <Typography variant="h6" align="center" sx={{ mb: 1 }}>
-          {`${day.date.getFullYear()}年${day.date.getMonth() + 1}月${day.date.getDate()}日`}
+          {format(day.date, 'yyyy年M月d日(E)', { locale: ja })}
         </Typography>
       );
     } else if (viewUnit === 'threeDay') {
@@ -415,7 +762,7 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
       const endDay = weekData.days[weekData.days.length - 1];
       return (
         <Typography variant="h6" align="center" sx={{ mb: 1 }}>
-          {`${startDay.date.getMonth() + 1}月${startDay.date.getDate()}日 - ${endDay.date.getMonth() + 1}月${endDay.date.getDate()}日`}
+          {format(startDay.date, 'M月d日(E)', { locale: ja })} - {format(endDay.date, 'M月d日(E)', { locale: ja })}
         </Typography>
       );
     }
@@ -423,7 +770,7 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
     return null;
   };
 
-  // ドラッグ可能な献立リスト
+  // DnD-kitコンテキストの作成
   const renderDraggableMeals = () => {
     // 全ての献立アイテムのID生成（ドラッグ＆ドロップ用）
     const allMealIds = weekData.days.flatMap(day => 
@@ -451,17 +798,18 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={allMealIds} strategy={verticalListSortingStrategy}>
           <Grid 
             container 
-            spacing={0.5} /* spacingを縮小 */
+            spacing={0.5}
             sx={{ 
               mt: 0.5, 
               height: '100%', 
               width: '100%',
-              flexWrap: 'nowrap' /* 重要：折り返しを防止 */
+              flexWrap: 'nowrap'
             }}
           >
             {weekData.days.map((day, dayIndex) => (
@@ -474,13 +822,13 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
                   display: 'flex',
                   width: `${100 / weekData.days.length}%`,
                   maxWidth: `${100 / weekData.days.length}%`,
-                  px: 0.25 /* 内側の余白を調整 */
+                  px: 0.25
                 }}
               >
                 <Paper
                   elevation={0}
                   sx={{
-                    p: { xs: 0.5, sm: 0.75, md: 1 }, /* レスポンシブパディング */
+                    p: { xs: 0.5, sm: 0.75, md: 1 },
                     height: '100%',
                     width: '100%',
                     borderRadius: 1,
@@ -492,10 +840,10 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
                     flex: 1,
                     boxSizing: 'border-box',
                     overflow: 'hidden',
-                    minWidth: 0 /* 重要：flexアイテムが縮小できるようにする */
+                    minWidth: 0
                   }}
                 >
-                  {/* 日付表示を追加 */}
+                  {/* 日付表示 */}
                   <Typography 
                     variant="subtitle2" 
                     align="center"
@@ -511,7 +859,7 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
                     {formatDate(day.date)}
                   </Typography>
                   
-                  {/* 朝食・昼食・夕食のカード */}
+                  {/* 各食事タイプのカード */}
                   <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     {['breakfast', 'lunch', 'dinner'].map((mealType) => {
                       const mealTypeTyped = mealType as 'breakfast' | 'lunch' | 'dinner';
@@ -523,12 +871,20 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
                       };
                       
                       return (
-                        <DraggableMealItem
-                          key={`meal-${mealType}`}
-                          meal={meal}
+                        <DroppableMealZone 
+                          key={`meal-container-${mealType}`}
                           date={day.date}
+                          mealType={mealTypeTyped}
                           onMealClick={onMealClick}
-                        />
+                        >
+                          <DraggableMealItem
+                            key={`meal-${mealType}`}
+                            meal={meal}
+                            date={day.date}
+                            onMealClick={onMealClick}
+                            onRecipeClick={onRecipeClick}
+                          />
+                        </DroppableMealZone>
                       );
                     })}
                   </Box>
@@ -537,49 +893,30 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
             ))}
           </Grid>
         </SortableContext>
+        
+        {/* ドラッグアイテムのオーバーレイ */}
+        <DragOverlay>
+          <DragOverlayContent active={activeItem} />
+        </DragOverlay>
       </DndContext>
     );
   };
-  
+
   return (
-    <Box sx={{ 
-      p: 2, 
-      height: '100%', 
-      display: 'flex', 
-      flexDirection: 'column' 
-    }}>
-      {/* カルーセル形式のナビゲーション（週ビュー以外のときに表示） */}
-      {(viewUnit !== 'week' && (onNext || onPrevious)) && (
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          mb: 1.5 
-        }}>
-          <IconButton 
-            onClick={onPrevious} 
-            disabled={!onPrevious}
-            color="primary"
-            sx={{ border: '1px solid', borderColor: 'divider' }}
-          >
-            <ArrowBackIcon />
-          </IconButton>
-          
-          {renderUnitTitle()}
-          
-          <IconButton 
-            onClick={onNext}
-            disabled={!onNext}
-            color="primary"
-            sx={{ border: '1px solid', borderColor: 'divider' }}
-          >
-            <ArrowForwardIcon />
-          </IconButton>
-        </Box>
-      )}
+    <Box sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* ヘッダー */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+        <IconButton onClick={onPrevious} size="small">
+          <ArrowBackIcon />
+        </IconButton>
+        {renderUnitTitle()}
+        <IconButton onClick={onNext} size="small">
+          <ArrowForwardIcon />
+        </IconButton>
+      </Box>
       
-      {/* ドラッグ可能な献立表示 */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto', height: '100%' }}>
+      {/* 献立表示 */}
+      <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
         {renderDraggableMeals()}
       </Box>
     </Box>

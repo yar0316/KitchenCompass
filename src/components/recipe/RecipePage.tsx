@@ -22,68 +22,7 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import RecipeFormDialog from './RecipeFormDialog';
 import RecipeItem from './RecipeItem';
 import RecipeDetails from './RecipeDetails';
-
-// モックデータ：レシピのサンプル
-const MOCK_RECIPES = [
-  {
-    id: '1',
-    name: 'トマトとモッツァレラのカプレーゼ',
-    description: '新鮮なトマトとモッツァレラチーズのシンプルなイタリアンサラダ',
-    imageUrl: 'https://source.unsplash.com/random/300x200/?caprese',
-    cookingTime: 10,
-    difficulty: 'easy',
-    tags: ['イタリアン', 'サラダ', 'ベジタリアン'],
-    rating: 4.5,
-    createdAt: '2025-03-12T10:20:30Z'
-  },
-  {
-    id: '2',
-    name: '基本の肉じゃが',
-    description: '日本の家庭料理の定番、ほっとする味わいの肉じゃが',
-    imageUrl: 'https://source.unsplash.com/random/300x200/?stew',
-    cookingTime: 40,
-    difficulty: 'medium',
-    tags: ['和食', '煮物', '定番'],
-    rating: 4.8,
-    createdAt: '2025-03-15T14:30:20Z'
-  },
-  {
-    id: '3',
-    name: 'アボカドとエビのサラダ',
-    description: '新鮮なアボカドとプリプリのエビを使ったヘルシーサラダ',
-    imageUrl: 'https://source.unsplash.com/random/300x200/?avocado',
-    cookingTime: 15,
-    difficulty: 'easy',
-    tags: ['サラダ', 'ヘルシー', 'アボカド'],
-    rating: 4.2,
-    createdAt: '2025-03-18T09:15:45Z'
-  },
-  {
-    id: '4',
-    name: '手作りピザ',
-    description: '自家製生地で作る本格ピザ。トッピングはお好みで',
-    imageUrl: 'https://source.unsplash.com/random/300x200/?homemade-pizza',
-    cookingTime: 60,
-    difficulty: 'hard',
-    tags: ['イタリアン', 'パーティー', '手作り'],
-    rating: 4.7,
-    createdAt: '2025-03-20T16:40:10Z'
-  },
-  {
-    id: '5',
-    name: '鶏肉の照り焼き',
-    description: '甘辛いタレが絡んだ、ご飯が進む照り焼きチキン',
-    imageUrl: 'https://source.unsplash.com/random/300x200/?teriyaki',
-    cookingTime: 25,
-    difficulty: 'medium',
-    tags: ['和食', '鶏肉', '定番'],
-    rating: 4.4,
-    createdAt: '2025-03-22T11:25:30Z'
-  }
-];
-
-// グレーのダミー画像URL（実際のデプロイ時には差し替える）
-const DUMMY_IMAGE_URL = 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%22320%22 height%3D%22180%22 viewBox%3D%220 0 320 180%22 fill%3D%22%23e0e0e0%22%3E%3Crect width%3D%22320%22 height%3D%22180%22%2F%3E%3C%2Fsvg%3E';
+import { MOCK_RECIPES, DUMMY_IMAGE_URL } from '../../mock/recipeData';
 
 // フィルターオプション
 const FILTER_OPTIONS = {

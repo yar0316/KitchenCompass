@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import RecipePage from '../components/recipe/RecipePage';
 import ShoppingListPage from '../components/shopping/ShoppingListPage';
 import DashboardPage from '../components/dashboard/DashboardPage';
+import MenuPlanPage from '../components/menu/MenuPlanPage';
 
 /**
  * アプリケーションのルーティング設定
@@ -17,8 +18,8 @@ const AppRoutes: React.FC = () => {
       {/* レシピ管理 */}
       <Route path="/recipes" element={<RecipePage />} />
       
-      {/* 献立管理 - まだ実装されていない */}
-      {/* <Route path="/menus" element={<MenuPlanPage />} /> */}
+      {/* 献立管理 */}
+      <Route path="/menus" element={<MenuPlanPage />} />
       
       {/* 買い物リスト */}
       <Route path="/shopping" element={<ShoppingListPage />} />
