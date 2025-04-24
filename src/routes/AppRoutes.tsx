@@ -4,6 +4,8 @@ import RecipePage from '../components/recipe/RecipePage';
 import ShoppingListPage from '../components/shopping/ShoppingListPage';
 import DashboardPage from '../components/dashboard/DashboardPage';
 import MenuPlanPage from '../components/menu/MenuPlanPage';
+import ProfilePage from '../components/profile/ProfilePage';
+import SettingsPage from '../components/settings/SettingsPage';
 
 /**
  * アプリケーションのルーティング設定
@@ -24,9 +26,11 @@ const AppRoutes: React.FC = () => {
       {/* 買い物リスト */}
       <Route path="/shopping" element={<ShoppingListPage />} />
       
-      {/* その他のルート */}
-      <Route path="/profile" element={<div>プロフィールページ（開発中）</div>} />
-      <Route path="/settings" element={<div>設定ページ（開発中）</div>} />
+      {/* プロフィール */}
+      <Route path="/profile" element={<ProfilePage />} />
+      
+      {/* 設定 */}
+      <Route path="/settings" element={<SettingsPage />} />
       
       {/* 存在しないパスの場合はホームにリダイレクト */}
       <Route path="*" element={<Navigate to="/" replace />} />
