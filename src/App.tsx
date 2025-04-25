@@ -4,6 +4,8 @@ import { BrowserRouter, useLocation } from 'react-router-dom';
 import { lightTheme, darkTheme } from './theme/theme';
 import Layout from './components/layout/Layout';
 import AppRoutes from './routes/AppRoutes';
+// Amplify設定を読み込む
+import './amplify/config';
 
 // 現在のパスを取得するためのラッパーコンポーネント
 const AppContent = () => {

@@ -1,5 +1,4 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
-import { auth } from '../auth/resource';
 
 /**
  * KitchenCompassアプリケーション用データモデル
@@ -19,16 +18,10 @@ const schema = a.schema({
       familyName: a.string().required(),
       preferredCuisine: a.string(),
       
-      // 設定情報
-      preferences: a.field({
-        allergies: a.string().list(),
-        foodRestrictions: a.string().list(),
-        favoriteCategories: a.string().list(),
-      }),
+      // 設定情報 - ネストされた構造はオブジェクトとして定義
+      preferences: a.json(), // JSON形式としてシリアライズされた設定情報
     })
-    .authorization((allow) => [
-      allow.owner(), // 所有者のみアクセス可能
-    ]),
+    .authorization((allow) => allow.owner()),
     
   // レシピ情報
   Recipe: a
@@ -49,46 +42,32 @@ const schema = a.schema({
       notes: a.string(), // メモ
       favorite: a.boolean().default(false), // お気に入り
       
-      // カスタム型
-      ingredients: a.field({
-        items: a.field({
-          name: a.string().required(),
-          amount: a.float().required(),
-          unit: a.string().required(),
-        }).list(),
-      }),
+      // カスタム型 - JSON文字列として保存
+      ingredientsJson: a.json(), // JSON形式の材料情報
+      instructionsJson: a.json(), // JSON形式の手順情報
       
-      instructions: a.field({
-        items: a.field({
-          stepNumber: a.integer().required(),
-          instruction: a.string().required(),
-        }).list(),
-      }),
-      
-      // 調理器具
-      cookwareNeeded: a.string().list(),
+      // 調理器具 - カンマ区切り文字列として保存
+      cookwareNeeded: a.string(), // カンマ区切りの文字列
       
       // 作成者
       createdBy: a.string(),
     })
     .authorization((allow) => [
-      allow.owner(), // 所有者のみ編集可能
-      allow.authenticated().to(['read']), // 認証済みユーザーは閲覧のみ可能
+      allow.owner(),
+      allow.authenticated().to(['read']),
     ]),
     
   // 献立情報
   Menu: a
     .model({
-      date: a.date().required(), // 日付
+      date: a.datetime().required(), // 日付
       notes: a.string(), // メモ
       owner: a.string(),
       
       // 献立項目（リスト型）
-      menuItems: a.hasMany('MenuItem'),
+      menuItems: a.hasMany('MenuItem', { references: ['menuId'] }),
     })
-    .authorization((allow) => [
-      allow.owner(), // 所有者のみアクセス可能
-    ]),
+    .authorization((allow) => allow.owner()),
     
   // 献立項目
   MenuItem: a
@@ -98,14 +77,15 @@ const schema = a.schema({
       isOutside: a.boolean().default(false), // 外食かどうか
       outsideLocation: a.string(), // 外食先
       notes: a.string(), // メモ
+
+      // リレーションキー
+      menuId: a.string().required(),
       
       // リレーション
-      menu: a.belongsTo('Menu'),
+      menu: a.belongsTo('Menu', { fields: ['menuId'] }),
       recipeId: a.string(), // レシピID
     })
-    .authorization((allow) => [
-      allow.owner(), // 所有者のみアクセス可能
-    ]),
+    .authorization((allow) => allow.owner()),
     
   // 買い物リスト
   ShoppingList: a
@@ -113,16 +93,14 @@ const schema = a.schema({
       // 基本情報
       name: a.string().required(),
       description: a.string(),
-      dueDate: a.date(), // 買い物予定日
+      dueDate: a.datetime(), // 買い物予定日
       isCompleted: a.boolean().default(false),
       owner: a.string(),
       
       // リレーション
-      items: a.hasMany('ShoppingItem'),
+      items: a.hasMany('ShoppingItem', 'shoppingListId'),
     })
-    .authorization((allow) => [
-      allow.owner(), // 所有者のみアクセス可能
-    ]),
+    .authorization((allow) => allow.owner()),
     
   // 買い物アイテム
   ShoppingItem: a
@@ -136,12 +114,10 @@ const schema = a.schema({
       notes: a.string(),
       
       // リレーション
-      shoppingList: a.belongsTo('ShoppingList'),
+      shoppingList: a.belongsTo('ShoppingList', 'shoppingListId'),
       sourceRecipe: a.string(), // どのレシピから追加されたか
     })
-    .authorization((allow) => [
-      allow.owner(), // 所有者のみアクセス可能
-    ]),
+    .authorization((allow) => allow.owner()),
     
   // 献立テンプレート（要件2.1.3）
   MenuTemplate: a
@@ -151,20 +127,10 @@ const schema = a.schema({
       description: a.string(),
       owner: a.string(),
       
-      // テンプレート内容
-      templateItems: a.field({
-        items: a.field({
-          dayOffset: a.integer().required(), // 何日目か
-          mealType: a.string().required(), // 朝食、昼食、夕食など
-          recipeId: a.string(), // レシピID（オプション）
-          recipeName: a.string().required(), // レシピ名
-          isOutside: a.boolean().default(false),
-        }).list(),
-      }),
+      // テンプレート内容 - JSON文字列として保存
+      templateItemsJson: a.json(), // JSON形式テンプレート項目
     })
-    .authorization((allow) => [
-      allow.owner(), // 所有者のみアクセス可能
-    ]),
+    .authorization((allow) => allow.owner()),
 });
 
 export type Schema = ClientSchema<typeof schema>;
@@ -173,8 +139,5 @@ export const data = defineData({
   schema,
   authorizationModes: {
     defaultAuthorizationMode: 'userPool',
-    userPoolConfig: {
-      userPool: auth,
-    },
   },
 });

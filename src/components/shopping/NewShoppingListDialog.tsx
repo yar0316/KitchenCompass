@@ -6,7 +6,8 @@ import {
   DialogActions,
   TextField,
   Button,
-  Box
+  Box,
+  CircularProgress
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -33,6 +34,7 @@ const NewShoppingListDialog: React.FC<NewShoppingListDialogProps> = ({
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [nameError, setNameError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   // フォームリセット
   const resetForm = () => {
@@ -40,6 +42,7 @@ const NewShoppingListDialog: React.FC<NewShoppingListDialogProps> = ({
     setDescription('');
     setDueDate(null);
     setNameError('');
+    setIsSaving(false);
   };
 
   // ダイアログを閉じる
@@ -56,6 +59,10 @@ const NewShoppingListDialog: React.FC<NewShoppingListDialogProps> = ({
       return;
     }
 
+    setIsSaving(true);
+
+    // AWS Amplifyに送信するためのフォーマット処理
+    // ISO文字列としてデータを渡す
     onSave({
       name: name.trim(),
       description: description.trim(),
@@ -95,6 +102,7 @@ const NewShoppingListDialog: React.FC<NewShoppingListDialogProps> = ({
             helperText={nameError}
             placeholder="例: 週末の買い物"
             required
+            disabled={isSaving}
           />
           
           <TextField
@@ -105,6 +113,7 @@ const NewShoppingListDialog: React.FC<NewShoppingListDialogProps> = ({
             placeholder="例: 日曜日のディナーパーティー用"
             multiline
             rows={2}
+            disabled={isSaving}
           />
           
           <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ja}>
@@ -116,6 +125,7 @@ const NewShoppingListDialog: React.FC<NewShoppingListDialogProps> = ({
                 textField: {
                   fullWidth: true,
                   placeholder: '買い物予定日',
+                  disabled: isSaving
                 }
               }}
             />
@@ -124,15 +134,21 @@ const NewShoppingListDialog: React.FC<NewShoppingListDialogProps> = ({
       </DialogContent>
       
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={handleClose} color="inherit">
+        <Button 
+          onClick={handleClose} 
+          color="inherit"
+          disabled={isSaving}
+        >
           キャンセル
         </Button>
         <Button 
           onClick={handleSave} 
           variant="contained" 
           color="primary"
+          disabled={isSaving || !name.trim()}
+          startIcon={isSaving ? <CircularProgress size={20} /> : null}
         >
-          作成
+          {isSaving ? '作成中...' : '作成'}
         </Button>
       </DialogActions>
     </Dialog>

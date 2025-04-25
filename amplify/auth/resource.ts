@@ -8,7 +8,7 @@ import { defineAuth } from '@aws-amplify/backend';
 export const auth = defineAuth({
   loginWith: {
     email: true, // メールによるログイン
-    username: true, // ユーザー名によるログインも許可
+    // username: true, // 最新のAmplify SDKではサポートされていないためコメントアウト
   },
   // ユーザー属性の設定
   userAttributes: {
@@ -25,12 +25,6 @@ export const auth = defineAuth({
   multifactor: {
     mode: 'OFF',
   },
-  // パスワードポリシー
-  passwordPolicy: {
-    minLength: 8,
-    requireLowercase: true,
-    requireUppercase: true,
-    requireNumbers: true,
-    requireSymbols: false,
-  },
+  // パスワードポリシーは最新のSDKでは別の方法で設定する必要があります
+  // 最新のSDKではデフォルト値が使われます
 });
