@@ -10,8 +10,23 @@ import { storage } from './storage/resource';
  * - storage: ストレージ機能（S3）
  * @see https://docs.amplify.aws/react/build-a-backend/
  */
-defineBackend({
+const backend = defineBackend({
   auth,
   data,
   storage,
 });
+
+// パスワードポリシーのカスタマイズ
+const { cfnUserPool } = backend.auth.resources.cfnResources;
+
+// 安全性とユーザビリティのバランスの取れたパスワードポリシーを設定
+cfnUserPool.policies = {
+  passwordPolicy: {
+    minimumLength: 8, // 最小8文字
+    requireLowercase: true, // 小文字必須
+    requireUppercase: true, // 大文字必須
+    requireNumbers: true, // 数字必須
+    requireSymbols: true, // 記号必須
+    temporaryPasswordValidityDays: 7, // 一時パスワード有効期間: 7日間
+  },
+};

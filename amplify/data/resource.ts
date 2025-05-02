@@ -18,8 +18,23 @@ const schema = a.schema({
       familyName: a.string().required(),
       preferredCuisine: a.string(),
       
+      // プロフィール情報を拡張
+      email: a.string().required(), // メールアドレス
+      profileImageKey: a.string(), // プロフィール画像のストレージキー
+      bio: a.string(), // 自己紹介文
+      location: a.string(), // 地域
+      dietaryRestrictions: a.string(), // 食事制限（アレルギーなど）
+      cookingExperience: a.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']), // 料理経験レベル
+      
       // 設定情報 - ネストされた構造はオブジェクトとして定義
       preferences: a.json(), // JSON形式としてシリアライズされた設定情報
+      
+      // ユーザー統計情報
+      recipesCreatedCount: a.integer().default(0), // 作成したレシピ数
+      favoriteCuisines: a.string().array(), // 好きな料理ジャンル（配列）
+      
+      // リレーション：お気に入りレシピ（後で追加）
+      // favoriteRecipes: a.hasMany('UserRecipeFavorite', 'userId'),
     })
     .authorization((allow) => allow.owner()),
     
@@ -64,8 +79,8 @@ const schema = a.schema({
       notes: a.string(), // メモ
       owner: a.string(),
       
-      // 献立項目（リスト型）
-      menuItems: a.hasMany('MenuItem', { references: ['menuId'] }),
+      // 献立項目（リスト型） - 修正：hasMany構文
+      menuItems: a.hasMany('MenuItem', 'menuId'),
     })
     .authorization((allow) => allow.owner()),
     
@@ -81,8 +96,8 @@ const schema = a.schema({
       // リレーションキー
       menuId: a.string().required(),
       
-      // リレーション
-      menu: a.belongsTo('Menu', { fields: ['menuId'] }),
+      // リレーション - 修正：belongsTo構文
+      menu: a.belongsTo('Menu', 'menuId'),
       recipeId: a.string(), // レシピID
     })
     .authorization((allow) => allow.owner()),
@@ -97,7 +112,7 @@ const schema = a.schema({
       isCompleted: a.boolean().default(false),
       owner: a.string(),
       
-      // リレーション
+      // リレーション - 修正：hasMany構文
       items: a.hasMany('ShoppingItem', 'shoppingListId'),
     })
     .authorization((allow) => allow.owner()),
@@ -113,7 +128,8 @@ const schema = a.schema({
       isChecked: a.boolean().default(false),
       notes: a.string(),
       
-      // リレーション
+      // リレーション - 修正：belongsTo構文
+      shoppingListId: a.string().required(),
       shoppingList: a.belongsTo('ShoppingList', 'shoppingListId'),
       sourceRecipe: a.string(), // どのレシピから追加されたか
     })
