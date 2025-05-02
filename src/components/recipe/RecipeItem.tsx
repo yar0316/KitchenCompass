@@ -9,21 +9,28 @@ import {
   Chip,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import { Recipe } from '../../API';
+import { DUMMY_IMAGE_URL } from '../../mock/recipeData';
 
 interface RecipeItemProps {
-  recipe: {
-    id: string;
-    name: string;
-    description: string;
-    imageUrl: string;
-    cookingTime: number;
-    tags: string[];
+  recipe: Recipe & {
+    // Recipeの既存の型にUI表示用の追加プロパティを定義
+    ingredients?: Array<{ id: string; name: string; amount: string; unit: string }>;
+    steps?: Array<{ id: string; description: string }>;
+    cookingTime?: number;
+    tags?: string[];
   };
   onClick: () => void;
 }
 
 const RecipeItem: React.FC<RecipeItemProps> = ({ recipe, onClick }) => {
-  const { name, description, imageUrl, cookingTime, tags } = recipe;
+  // バックエンドのデータ構造を考慮して値を安全に取得
+  const name = recipe.name || '無題のレシピ';
+  const description = recipe.description || '';
+  const imageUrl = recipe.imageUrl || DUMMY_IMAGE_URL;
+  const cookingTime = recipe.cookTime || recipe.cookingTime || 0;
+  const tags = recipe.tags || 
+    (recipe.cuisine ? recipe.cuisine.split(',').map(tag => tag.trim()) : []);
   
   // 説明文を短く切り詰める
   const shortDescription = description.length > 60

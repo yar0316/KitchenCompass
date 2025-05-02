@@ -149,3 +149,106 @@ export const shoppingItemsByShoppingListId = /* GraphQL */ `
     }
   }
 `;
+
+// Recipeに関するクエリの追加
+export const getRecipe = /* GraphQL */ `
+  query GetRecipe($id: ID!) {
+    getRecipe(id: $id) {
+      id
+      name
+      description
+      prepTime
+      cookTime
+      servings
+      category
+      cuisine
+      imageUrl
+      externalUrl
+      rating
+      notes
+      favorite
+      ingredientsJson
+      instructionsJson
+      cookwareNeeded
+      createdBy
+      owner
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const listRecipes = /* GraphQL */ `
+  query ListRecipes(
+    $filter: ModelRecipeFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listRecipes(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        name
+        description
+        prepTime
+        cookTime
+        servings
+        category
+        cuisine
+        imageUrl
+        externalUrl
+        rating
+        notes
+        favorite
+        ingredientsJson
+        instructionsJson
+        cookwareNeeded
+        createdBy
+        owner
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+export const recipesByCategory = /* GraphQL */ `
+  query RecipesByCategory(
+    $category: String!
+    $sortDirection: ModelSortDirection
+    $filter: ModelRecipeFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    recipesByCategory(
+      category: $category
+      sortDirection: $sortDirection
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+    ) {
+      items {
+        id
+        name
+        description
+        prepTime
+        cookTime
+        servings
+        category
+        cuisine
+        imageUrl
+        externalUrl
+        rating
+        notes
+        favorite
+        ingredientsJson
+        instructionsJson
+        createdBy
+        owner
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;

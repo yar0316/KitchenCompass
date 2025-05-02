@@ -13,7 +13,9 @@ import {
   InputLabel,
   Divider,
   Pagination,
-  SelectChangeEvent
+  SelectChangeEvent,
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
@@ -22,7 +24,14 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import RecipeFormDialog from './RecipeFormDialog';
 import RecipeItem from './RecipeItem';
 import RecipeDetails from './RecipeDetails';
-import { MOCK_RECIPES, DUMMY_IMAGE_URL } from '../../mock/recipeData';
+import { generateClient } from 'aws-amplify/api';
+import { listRecipes } from '../../graphql/queries';
+import { createRecipe, updateRecipe, deleteRecipe } from '../../graphql/mutations';
+import { Recipe, CreateRecipeInput, UpdateRecipeInput, DeleteRecipeInput } from '../../API';
+import { DUMMY_IMAGE_URL } from '../../mock/recipeData';
+
+// APIクライアントの初期化
+const client = generateClient();
 
 // フィルターオプション
 const FILTER_OPTIONS = {
@@ -47,8 +56,8 @@ const SORT_OPTIONS = [
 
 const RecipePage: React.FC = () => {
   // 状態
-  const [recipes, setRecipes] = useState(MOCK_RECIPES);
-  const [filteredRecipes, setFilteredRecipes] = useState(MOCK_RECIPES);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState('newest');
   const [timeFilter, setTimeFilter] = useState('all');
@@ -56,7 +65,74 @@ const RecipePage: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const ITEMS_PER_PAGE = 8;
+
+  // レシピデータの取得
+  useEffect(() => {
+    fetchRecipes();
+  }, []);
+  
+  // レシピデータの取得処理
+  const fetchRecipes = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Amplify V6でのGraphQLクエリ呼び出し
+      const response: any = await client.graphql({
+        query: listRecipes
+      });
+      
+      // DynamoDBから取得したレシピデータ
+      const recipeData = response.data.listRecipes.items;
+      
+      // 各レシピのJSONデータをパース
+      const processedRecipes = recipeData.map((recipe: Recipe) => {
+        // レシピが有効なデータであることを確認
+        if (!recipe) return null;
+        
+        try {
+          // JSONデータのパース
+          const ingredientsJson = recipe.ingredientsJson ? JSON.parse(recipe.ingredientsJson) : [];
+          const instructionsJson = recipe.instructionsJson ? JSON.parse(recipe.instructionsJson) : [];
+          
+          // 処理されたレシピの返却
+          return {
+            ...recipe,
+            // レシピに必要なプロパティのマッピング
+            ingredients: ingredientsJson,
+            steps: instructionsJson,
+            // 表示用データ変換
+            cookingTime: recipe.cookTime || 0,
+            prepTime: recipe.prepTime || 0,
+            tags: recipe.cuisine ? recipe.cuisine.split(',').map(tag => tag.trim()) : [],
+            createdAt: recipe.createdAt || new Date().toISOString()
+          };
+        } catch (error) {
+          console.error('レシピデータの解析エラー:', error);
+          // エラーが発生しても他のレシピには影響しないよう、基本情報だけ設定したオブジェクトを返す
+          return {
+            ...recipe,
+            ingredients: [],
+            steps: [],
+            cookingTime: recipe.cookTime || 0,
+            prepTime: recipe.prepTime || 0,
+            tags: recipe.cuisine ? recipe.cuisine.split(',').map(tag => tag.trim()) : [],
+            createdAt: recipe.createdAt || new Date().toISOString()
+          };
+        }
+      }).filter(Boolean) as Recipe[]; // 有効なレシピのみ残す
+      
+      setRecipes(processedRecipes);
+      setLoading(false);
+    } catch (err) {
+      console.error('レシピデータ取得エラー:', err);
+      setError('レシピの読み込み中にエラーが発生しました。');
+      setLoading(false);
+    }
+  };
   
   // レシピをフィルタリングしてソートする
   useEffect(() => {
@@ -66,9 +142,9 @@ const RecipePage: React.FC = () => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(recipe => 
-        recipe.name.toLowerCase().includes(query) || 
-        recipe.description.toLowerCase().includes(query) ||
-        recipe.tags.some(tag => tag.toLowerCase().includes(query))
+        (recipe.name?.toLowerCase().includes(query) || false) || 
+        (recipe.description?.toLowerCase().includes(query) || false) ||
+        (recipe.tags?.some(tag => tag.toLowerCase().includes(query)) || false)
       );
     }
     
@@ -76,16 +152,16 @@ const RecipePage: React.FC = () => {
     if (timeFilter !== 'all') {
       switch (timeFilter) {
         case 'under15':
-          result = result.filter(recipe => recipe.cookingTime <= 15);
+          result = result.filter(recipe => (recipe.cookTime || 0) <= 15);
           break;
         case 'under30':
-          result = result.filter(recipe => recipe.cookingTime <= 30);
+          result = result.filter(recipe => (recipe.cookTime || 0) <= 30);
           break;
         case 'under60':
-          result = result.filter(recipe => recipe.cookingTime <= 60);
+          result = result.filter(recipe => (recipe.cookTime || 0) <= 60);
           break;
         case 'over60':
-          result = result.filter(recipe => recipe.cookingTime > 60);
+          result = result.filter(recipe => (recipe.cookTime || 0) > 60);
           break;
       }
     }
@@ -93,7 +169,7 @@ const RecipePage: React.FC = () => {
     // タグフィルター
     if (selectedTags.length > 0) {
       result = result.filter(recipe => 
-        selectedTags.some(tag => recipe.tags.includes(tag))
+        recipe.tags?.some(tag => selectedTags.includes(tag)) || false
       );
     }
     
@@ -105,45 +181,129 @@ const RecipePage: React.FC = () => {
   }, [recipes, searchQuery, sortOption, timeFilter, selectedTags]);
   
   // レシピのソート
-  const sortRecipes = (recipesToSort: typeof MOCK_RECIPES, option: string) => {
+  const sortRecipes = (recipesToSort: Recipe[], option: string) => {
     switch (option) {
       case 'newest':
         return [...recipesToSort].sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date((b.createdAt as string) || '').getTime() - new Date((a.createdAt as string) || '').getTime()
         );
       case 'oldest':
         return [...recipesToSort].sort((a, b) => 
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          new Date((a.createdAt as string) || '').getTime() - new Date((b.createdAt as string) || '').getTime()
         );
       case 'name_asc':
-        return [...recipesToSort].sort((a, b) => a.name.localeCompare(b.name));
+        return [...recipesToSort].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
       case 'name_desc':
-        return [...recipesToSort].sort((a, b) => b.name.localeCompare(a.name));
+        return [...recipesToSort].sort((a, b) => (b.name || '').localeCompare(a.name || ''));
       case 'cooking_time':
-        return [...recipesToSort].sort((a, b) => a.cookingTime - b.cookingTime);
+        return [...recipesToSort].sort((a, b) => (a.cookTime || 0) - (b.cookTime || 0));
       default:
         return recipesToSort;
     }
   };
   
   // 新しいレシピの追加
-  const handleAddRecipe = (newRecipe: any) => {
-    const newRecipeWithId = {
-      ...newRecipe,
-      id: Date.now().toString(),
-      imageUrl: DUMMY_IMAGE_URL,
-      createdAt: new Date().toISOString()
-    };
-    
-    setRecipes([...recipes, newRecipeWithId]);
-    setSelectedRecipe(newRecipeWithId.id);
+  const handleAddRecipe = async (newRecipe: any) => {
+    try {
+      // 材料と手順をJSON文字列に変換
+      const ingredientsJson = JSON.stringify(newRecipe.ingredients || []);
+      const instructionsJson = JSON.stringify(newRecipe.steps || []);
+      
+      // タグをカンマ区切り文字列に変換
+      const cuisine = (newRecipe.tags || []).join(',');
+      
+      // Amplify形式のレシピ入力データを作成
+      const createInput: CreateRecipeInput = {
+        name: newRecipe.name,
+        description: newRecipe.description || '',
+        prepTime: newRecipe.prepTime || 0,
+        cookTime: newRecipe.cookingTime || 0,
+        servings: newRecipe.servings || 2,
+        category: newRecipe.category || 'other',
+        cuisine: cuisine,
+        imageUrl: newRecipe.imageUrl || DUMMY_IMAGE_URL,
+        ingredientsJson: ingredientsJson,
+        instructionsJson: instructionsJson,
+        createdBy: 'user', // 実際のユーザーIDに変更する必要があります
+        favorite: false
+      };
+      
+      // Amplify V6でのGraphQLミューテーション呼び出し
+      const result: any = await client.graphql({
+        query: createRecipe,
+        variables: { input: createInput }
+      });
+      
+      const createdRecipe = result.data.createRecipe;
+      
+      // 新しく作成されたレシピを表示用に変換
+      const processedRecipe = {
+        ...createdRecipe,
+        ingredients: newRecipe.ingredients || [],
+        steps: newRecipe.steps || [],
+        cookingTime: createdRecipe.cookTime || 0,
+        tags: createdRecipe.cuisine ? createdRecipe.cuisine.split(',').map((tag: string) => tag.trim()) : [],
+      };
+      
+      // 既存のレシピリストに追加
+      setRecipes([...recipes, processedRecipe]);
+      setSelectedRecipe(createdRecipe.id);
+    } catch (err) {
+      console.error('レシピ作成エラー:', err);
+      alert('レシピの保存中にエラーが発生しました。');
+    }
   };
   
   // レシピの更新
-  const handleUpdateRecipe = (updatedRecipe: any) => {
-    setRecipes(recipes.map(recipe => 
-      recipe.id === updatedRecipe.id ? updatedRecipe : recipe
-    ));
+  const handleUpdateRecipe = async (updatedRecipe: any) => {
+    try {
+      // 材料と手順をJSON文字列に変換
+      const ingredientsJson = JSON.stringify(updatedRecipe.ingredients || []);
+      const instructionsJson = JSON.stringify(updatedRecipe.steps || []);
+      
+      // タグをカンマ区切り文字列に変換
+      const cuisine = (updatedRecipe.tags || []).join(',');
+      
+      // Amplify形式のレシピ更新データを作成
+      const updateInput: UpdateRecipeInput = {
+        id: updatedRecipe.id,
+        name: updatedRecipe.name,
+        description: updatedRecipe.description || '',
+        prepTime: updatedRecipe.prepTime || 0,
+        cookTime: updatedRecipe.cookingTime || 0,
+        servings: updatedRecipe.servings || 2,
+        category: updatedRecipe.category || 'other',
+        cuisine: cuisine,
+        imageUrl: updatedRecipe.imageUrl,
+        ingredientsJson: ingredientsJson,
+        instructionsJson: instructionsJson
+      };
+      
+      // Amplify V6でのGraphQLミューテーション呼び出し
+      const result: any = await client.graphql({
+        query: updateRecipe,
+        variables: { input: updateInput }
+      });
+      
+      const updatedRecipeResult = result.data.updateRecipe;
+      
+      // 更新されたレシピを表示用に変換
+      const processedRecipe = {
+        ...updatedRecipeResult,
+        ingredients: updatedRecipe.ingredients || [],
+        steps: updatedRecipe.steps || [],
+        cookingTime: updatedRecipeResult.cookTime || 0,
+        tags: updatedRecipeResult.cuisine ? updatedRecipeResult.cuisine.split(',').map((tag: string) => tag.trim()) : [],
+      };
+      
+      // レシピリストを更新
+      setRecipes(recipes.map(recipe => 
+        recipe.id === updatedRecipe.id ? processedRecipe : recipe
+      ));
+    } catch (err) {
+      console.error('レシピ更新エラー:', err);
+      alert('レシピの更新中にエラーが発生しました。');
+    }
   };
   
   // レシピを選択
@@ -152,10 +312,26 @@ const RecipePage: React.FC = () => {
   };
   
   // レシピの削除
-  const handleDeleteRecipe = (id: string) => {
-    setRecipes(recipes.filter(recipe => recipe.id !== id));
-    if (selectedRecipe === id) {
-      setSelectedRecipe(null);
+  const handleDeleteRecipe = async (id: string) => {
+    try {
+      const deleteInput: DeleteRecipeInput = { id };
+      
+      // Amplify V6でのGraphQLミューテーション呼び出し
+      await client.graphql({
+        query: deleteRecipe,
+        variables: { input: deleteInput }
+      });
+      
+      // レシピリストから削除
+      setRecipes(recipes.filter(recipe => recipe.id !== id));
+      
+      // 選択中のレシピが削除された場合は選択を解除
+      if (selectedRecipe === id) {
+        setSelectedRecipe(null);
+      }
+    } catch (err) {
+      console.error('レシピ削除エラー:', err);
+      alert('レシピの削除中にエラーが発生しました。');
     }
   };
   
@@ -259,7 +435,7 @@ const RecipePage: React.FC = () => {
                   labelId="sort-label"
                   value={sortOption}
                   onChange={handleSortChange}
-                  label={<span><SortIcon /> 並び順</span>}
+                  label="並び順"
                 >
                   {SORT_OPTIONS.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
@@ -335,98 +511,114 @@ const RecipePage: React.FC = () => {
         </Box>
       ) : (
         <>
-          {/* レシピ一覧 */}
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            {filteredRecipes.length} 件のレシピが見つかりました
-          </Typography>
+          {/* エラーメッセージ */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
           
-          <Grid 
-            container 
-            spacing={2} // スペーシングを少し広げる
-            sx={{ 
-              justifyContent: 'flex-start',
-              mx: -1, // ネガティブマージンの調整
-            }}
-          >
-            {currentPageRecipes.length > 0 ? (
-              currentPageRecipes.map((recipe) => (
-                <Grid 
-                  item 
-                  key={recipe.id} 
-                  xs={12}     // モバイルでは1列
-                  sm={6}      // 小型タブレットでは2列
-                  md={4}      // タブレットでは3列
-                  lg={3}      // 中画面では4列
-                  xl={2.4}    // 大画面では5列
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'center', // カードを中央に配置
-                  }}
-                >
-                  <Box 
-                    sx={{ 
-                      width: '100%', // 親要素の幅いっぱいに広げる
-                      maxWidth: { 
-                        xs: '100%', 
-                        sm: '340px',  // sm（600px以上）では340px
-                        md: '320px',  // md（900px以上）では280px
-                        lg: '320px',  // lg（1200px以上）では300px
-                        xl: '340px'   // xl（1536px以上）では290px
-                      }, // 画面サイズごとに最大幅を調整
-                    }}
-                  >
-                    <RecipeItem 
-                      recipe={recipe} 
-                      onClick={() => handleSelectRecipe(recipe.id)} 
-                    />
-                  </Box>
-                </Grid>
-              ))
-            ) : (
-              <Grid item xs={12}>
-                <Box sx={{ 
-                  py: 5,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    レシピが見つかりません
-                  </Typography>
-                  <Typography color="text.secondary" align="center" sx={{ mb: 2 }}>
-                    検索条件に合うレシピがありません。<br />
-                    別のキーワードで検索するか、フィルターを変更してください。
-                  </Typography>
-                  <Button 
-                    variant="outlined" 
-                    onClick={() => {
-                      setSearchQuery('');
-                      setTimeFilter('all');
-                      setSelectedTags([]);
-                    }}
-                  >
-                    フィルターをクリア
-                  </Button>
-                </Box>
-              </Grid>
-            )}
-          </Grid>
-          
-          {/* ページネーション */}
-          {pageCount > 1 && (
-            <Box sx={{ 
-              display: 'flex', 
-              justifyContent: 'center',
-              mt: 4
-            }}>
-              <Pagination 
-                count={pageCount} 
-                page={page} 
-                onChange={handleChangePage}
-                color="primary"
-              />
+          {/* ローディング表示 */}
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress />
             </Box>
+          ) : (
+            <>
+              {/* レシピ一覧 */}
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {filteredRecipes.length} 件のレシピが見つかりました
+              </Typography>
+              
+              <Grid 
+                container 
+                spacing={2} // スペーシングを少し広げる
+                sx={{ 
+                  justifyContent: 'flex-start',
+                  mx: -1, // ネガティブマージンの調整
+                }}
+              >
+                {currentPageRecipes.length > 0 ? (
+                  currentPageRecipes.map((recipe) => (
+                    <Grid 
+                      item 
+                      key={recipe.id} 
+                      xs={12}     // モバイルでは1列
+                      sm={6}      // 小型タブレットでは2列
+                      md={4}      // タブレットでは3列
+                      lg={3}      // 中画面では4列
+                      xl={2.4}    // 大画面では5列
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'center', // カードを中央に配置
+                      }}
+                    >
+                      <Box 
+                        sx={{ 
+                          width: '100%', // 親要素の幅いっぱいに広げる
+                          maxWidth: { 
+                            xs: '100%', 
+                            sm: '340px',  // sm（600px以上）では340px
+                            md: '320px',  // md（900px以上）では280px
+                            lg: '320px',  // lg（1200px以上）では300px
+                            xl: '340px'   // xl（1536px以上）では290px
+                          }, // 画面サイズごとに最大幅を調整
+                        }}
+                      >
+                        <RecipeItem 
+                          recipe={recipe} 
+                          onClick={() => handleSelectRecipe(recipe.id)} 
+                        />
+                      </Box>
+                    </Grid>
+                  ))
+                ) : (
+                  <Grid item xs={12}>
+                    <Box sx={{ 
+                      py: 5,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <Typography variant="h6" color="text.secondary" gutterBottom>
+                        レシピが見つかりません
+                      </Typography>
+                      <Typography color="text.secondary" align="center" sx={{ mb: 2 }}>
+                        検索条件に合うレシピがありません。<br />
+                        別のキーワードで検索するか、フィルターを変更してください。
+                      </Typography>
+                      <Button 
+                        variant="outlined" 
+                        onClick={() => {
+                          setSearchQuery('');
+                          setTimeFilter('all');
+                          setSelectedTags([]);
+                        }}
+                      >
+                        フィルターをクリア
+                      </Button>
+                    </Box>
+                  </Grid>
+                )}
+              </Grid>
+              
+              {/* ページネーション */}
+              {pageCount > 1 && (
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center',
+                  mt: 4
+                }}>
+                  <Pagination 
+                    count={pageCount} 
+                    page={page} 
+                    onChange={handleChangePage}
+                    color="primary"
+                  />
+                </Box>
+              )}
+            </>
           )}
         </>
       )}

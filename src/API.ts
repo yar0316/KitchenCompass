@@ -51,6 +51,31 @@ export interface ShoppingItem {
   updatedAt?: string | null;
 }
 
+// Recipe関連の型定義
+export interface Recipe {
+  __typename: "Recipe";
+  id: string;
+  name: string;
+  description?: string | null;
+  prepTime?: number | null;
+  cookTime?: number | null;
+  servings?: number | null;
+  category?: string | null;
+  cuisine?: string | null;
+  imageUrl?: string | null;
+  externalUrl?: string | null;
+  rating?: number | null;
+  notes?: string | null;
+  favorite?: boolean | null;
+  ingredientsJson?: string | null;
+  instructionsJson?: string | null;
+  cookwareNeeded?: string | null;
+  createdBy?: string | null;
+  owner?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
 export interface CreateShoppingListInput {
   id?: string | null;
   name: string;
@@ -101,6 +126,52 @@ export interface DeleteShoppingItemInput {
   id: string;
 }
 
+// Recipe関連の入力型の追加
+export interface CreateRecipeInput {
+  id?: string | null;
+  name: string;
+  description?: string | null;
+  prepTime?: number | null;
+  cookTime?: number | null;
+  servings?: number | null;
+  category?: string | null;
+  cuisine?: string | null;
+  imageUrl?: string | null;
+  externalUrl?: string | null;
+  rating?: number | null;
+  notes?: string | null;
+  favorite?: boolean | null;
+  ingredientsJson?: string | null;
+  instructionsJson?: string | null;
+  cookwareNeeded?: string | null;
+  createdBy?: string | null;
+  owner?: string | null;
+}
+
+export interface UpdateRecipeInput {
+  id: string;
+  name?: string | null;
+  description?: string | null;
+  prepTime?: number | null;
+  cookTime?: number | null;
+  servings?: number | null;
+  category?: string | null;
+  cuisine?: string | null;
+  imageUrl?: string | null;
+  externalUrl?: string | null;
+  rating?: number | null;
+  notes?: string | null;
+  favorite?: boolean | null;
+  ingredientsJson?: string | null;
+  instructionsJson?: string | null;
+  cookwareNeeded?: string | null;
+  createdBy?: string | null;
+}
+
+export interface DeleteRecipeInput {
+  id: string;
+}
+
 export interface ModelShoppingListFilterInput {
   id?: ModelIDInput | null;
   name?: ModelStringInput | null;
@@ -127,6 +198,31 @@ export interface ModelShoppingItemFilterInput {
   and?: Array<ModelShoppingItemFilterInput | null> | null;
   or?: Array<ModelShoppingItemFilterInput | null> | null;
   not?: ModelShoppingItemFilterInput | null;
+}
+
+// Recipe関連のフィルター入力型の追加
+export interface ModelRecipeFilterInput {
+  id?: ModelIDInput | null;
+  name?: ModelStringInput | null;
+  description?: ModelStringInput | null;
+  prepTime?: ModelIntInput | null;
+  cookTime?: ModelIntInput | null;
+  servings?: ModelIntInput | null;
+  category?: ModelStringInput | null;
+  cuisine?: ModelStringInput | null;
+  imageUrl?: ModelStringInput | null;
+  externalUrl?: ModelStringInput | null;
+  rating?: ModelIntInput | null;
+  notes?: ModelStringInput | null;
+  favorite?: ModelBooleanInput | null;
+  ingredientsJson?: ModelStringInput | null;
+  instructionsJson?: ModelStringInput | null;
+  cookwareNeeded?: ModelStringInput | null;
+  createdBy?: ModelStringInput | null;
+  owner?: ModelStringInput | null;
+  and?: Array<ModelRecipeFilterInput | null> | null;
+  or?: Array<ModelRecipeFilterInput | null> | null;
+  not?: ModelRecipeFilterInput | null;
 }
 
 export interface ModelIDInput {
@@ -159,6 +255,18 @@ export interface ModelStringInput {
   attributeExists?: boolean | null;
   attributeType?: ModelAttributeTypes | null;
   size?: ModelSizeInput | null;
+}
+
+export interface ModelIntInput {
+  ne?: number | null;
+  eq?: number | null;
+  le?: number | null;
+  lt?: number | null;
+  ge?: number | null;
+  gt?: number | null;
+  between?: Array<number | null> | null;
+  attributeExists?: boolean | null;
+  attributeType?: ModelAttributeTypes | null;
 }
 
 export interface ModelBooleanInput {
@@ -201,4 +309,77 @@ export interface ModelSizeInput {
   ge?: number | null;
   gt?: number | null;
   between?: Array<number | null> | null;
+}
+
+// レスポンス型の追加
+export enum ModelSortDirection {
+  ASC = "ASC",
+  DESC = "DESC",
+}
+
+export interface ModelRecipeConnection {
+  __typename: "ModelRecipeConnection";
+  items: Array<Recipe | null>;
+  nextToken?: string | null;
+}
+
+export interface ModelShoppingListConnection {
+  __typename: "ModelShoppingListConnection";
+  items: Array<ShoppingList | null>;
+  nextToken?: string | null;
+}
+
+export interface ModelShoppingItemConnection {
+  __typename: "ModelShoppingItemConnection";
+  items: Array<ShoppingItem | null>;
+  nextToken?: string | null;
+}
+
+export interface ModelRecipeConditionInput {
+  name?: ModelStringInput | null;
+  description?: ModelStringInput | null;
+  prepTime?: ModelIntInput | null;
+  cookTime?: ModelIntInput | null;
+  servings?: ModelIntInput | null;
+  category?: ModelStringInput | null;
+  cuisine?: ModelStringInput | null;
+  imageUrl?: ModelStringInput | null;
+  externalUrl?: ModelStringInput | null;
+  rating?: ModelIntInput | null;
+  notes?: ModelStringInput | null;
+  favorite?: ModelBooleanInput | null;
+  ingredientsJson?: ModelStringInput | null;
+  instructionsJson?: ModelStringInput | null;
+  cookwareNeeded?: ModelStringInput | null;
+  createdBy?: ModelStringInput | null;
+  owner?: ModelStringInput | null;
+  and?: Array<ModelRecipeConditionInput | null> | null;
+  or?: Array<ModelRecipeConditionInput | null> | null;
+  not?: ModelRecipeConditionInput | null;
+}
+
+export interface ModelShoppingListConditionInput {
+  name?: ModelStringInput | null;
+  description?: ModelStringInput | null;
+  dueDate?: ModelStringInput | null;
+  isCompleted?: ModelBooleanInput | null;
+  owner?: ModelStringInput | null;
+  and?: Array<ModelShoppingListConditionInput | null> | null;
+  or?: Array<ModelShoppingListConditionInput | null> | null;
+  not?: ModelShoppingListConditionInput | null;
+}
+
+export interface ModelShoppingItemConditionInput {
+  name?: ModelStringInput | null;
+  amount?: ModelFloatInput | null;
+  unit?: ModelStringInput | null;
+  category?: ModelStringInput | null;
+  isChecked?: ModelBooleanInput | null;
+  notes?: ModelStringInput | null;
+  shoppingListId?: ModelIDInput | null;
+  sourceRecipe?: ModelStringInput | null;
+  owner?: ModelStringInput | null;
+  and?: Array<ModelShoppingItemConditionInput | null> | null;
+  or?: Array<ModelShoppingItemConditionInput | null> | null;
+  not?: ModelShoppingItemConditionInput | null;
 }

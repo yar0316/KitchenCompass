@@ -16,6 +16,10 @@ export const auth = defineAuth({
       google: {
         clientId: secret('GOOGLE_CLIENT_ID'),      // Google Developer ConsoleでのOAuthクライアントID
         clientSecret: secret('GOOGLE_CLIENT_SECRET'), // Google Developer Consoleで取得したクライアントシークレット
+        attributeMapping: {
+          email: 'email',
+          nickname: 'nickname' // nicknameを追加（必須属性）
+        }
       },
       // リダイレクトURLの設定
       callbackUrls: [
