@@ -48,13 +48,11 @@ const SideNav: React.FC<SideNavProps> = ({ open, onClose, currentPath }) => {
         const isSelected = currentPath === item.path;
         const hasChildren = item.children && item.children.length > 0;
         const isExpanded = expandedMenus[item.id] || false;
-        
-        return (
+          return (
           <React.Fragment key={item.id}>
             <ListItem disablePadding>
               <ListItemButton
-                component={hasChildren ? undefined : Link}
-                to={hasChildren ? undefined : item.path}
+                {...(!hasChildren && { component: Link, to: item.path })}
                 selected={isSelected}
                 onClick={hasChildren 
                   ? () => handleMenuToggle(item.id)

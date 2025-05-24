@@ -13,13 +13,7 @@ import { Recipe } from '../../API';
 import { DUMMY_IMAGE_URL } from '../../mock/recipeData';
 
 interface RecipeItemProps {
-  recipe: Recipe & {
-    // Recipeの既存の型にUI表示用の追加プロパティを定義
-    ingredients?: Array<{ id: string; name: string; amount: string; unit: string }>;
-    steps?: Array<{ id: string; description: string }>;
-    cookingTime?: number;
-    tags?: string[];
-  };
+  recipe: Recipe;
   onClick: () => void;
 }
 

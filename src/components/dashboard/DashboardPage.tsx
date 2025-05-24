@@ -1,5 +1,5 @@
 import React from 'react';
-import { Container, Typography, Box, Paper, Grid } from '@mui/material';
+import { Container, Typography, Box, Paper } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 
 /**
@@ -15,9 +15,8 @@ const DashboardPage: React.FC = () => {
           ダッシュボード
         </Typography>
       </Box>
-      
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ width: '100%' }}>
           <Paper 
             elevation={2}
             sx={{ 
@@ -35,10 +34,9 @@ const DashboardPage: React.FC = () => {
             <Typography variant="body1" align="center" color="text.secondary">
               このアプリケーションは開発中です。左側のナビゲーションから<br />
               「レシピ」や「買い物リスト」にアクセスすることができます。
-            </Typography>
-          </Paper>
-        </Grid>
-      </Grid>
+            </Typography>          </Paper>
+        </Box>
+      </Box>
     </Container>
   );
 };

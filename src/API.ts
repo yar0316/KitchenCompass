@@ -72,6 +72,10 @@ export interface Recipe {
   cookwareNeeded?: string | null;
   createdBy?: string | null;
   owner?: string | null;
+  tags?: string[] | null;
+  ingredients?: Array<{ id: string; name: string; amount: string; unit: string }> | null;
+  steps?: Array<{ id: string; description: string }> | null;
+  cookingTime?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
 }

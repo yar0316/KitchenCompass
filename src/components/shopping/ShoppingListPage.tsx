@@ -6,7 +6,6 @@ import {
   Button, 
   Paper,
   Divider,
-  IconButton,
   useTheme,
   useMediaQuery,
   Collapse,
@@ -20,9 +19,7 @@ import ShoppingListItem from './ShoppingListItem';
 import NewShoppingListDialog from './NewShoppingListDialog';
 import ShoppingListDetails from './ShoppingListDetails';
 import { generateClient } from 'aws-amplify/api';
-import { Schema } from '../../amplify/data/resource';
-import * as mutations from '../../graphql/mutations';
-import * as queries from '../../graphql/queries';
+import { Schema } from '../../../amplify/data/resource';
 import { type ShoppingList } from '../../API';
 
 // Amplify APIクライアントを生成
@@ -45,7 +42,7 @@ const ShoppingListPage: React.FC = () => {
     setLoading(true);
     try {
       const result = await client.models.ShoppingList.list();
-      setShoppingLists(result.data);
+      setShoppingLists(result.data as unknown as ShoppingList[]);
       setError(null);
     } catch (err) {
       console.error('買い物リストの取得中にエラーが発生しました:', err);
@@ -72,9 +69,8 @@ const ShoppingListPage: React.FC = () => {
       setSelectedList(sortedLists[0].id);
     }
   }, [shoppingLists, selectedList]);
-  
   // 新しい買い物リストの追加
-  const handleAddShoppingList = async (newList: any) => {
+  const handleAddShoppingList = async (newList: { name: string; description: string; dueDate: string | null; isCompleted: boolean }) => {
     try {
       // APIを使用して新しいShoppingListを作成
       const result = await client.models.ShoppingList.create({
@@ -85,9 +81,8 @@ const ShoppingListPage: React.FC = () => {
       });
       
       // 作成した新しいリストを状態に追加
-      if (result.data) {
-        setShoppingLists([...shoppingLists, result.data]);
-        setSelectedList(result.data.id); // 新しいリストを自動選択
+      if (result.data) {        setShoppingLists([...shoppingLists, result.data as unknown as ShoppingList]);
+        setSelectedList((result.data as unknown as ShoppingList).id); // 新しいリストを自動選択
       }
       setIsDialogOpen(false);
     } catch (err) {

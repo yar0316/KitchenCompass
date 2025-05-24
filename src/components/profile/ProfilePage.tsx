@@ -4,7 +4,6 @@ import {
   Typography,
   Box,
   Paper,
-  Grid,
   Avatar,
   Button,
   TextField,
@@ -128,7 +127,7 @@ const ProfilePage: React.FC = () => {
   };
 
   // タブ切り替え
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
@@ -149,11 +148,9 @@ const ProfilePage: React.FC = () => {
         <Typography variant="h5" component="h1">
           プロフィール
         </Typography>
-      </Box>
-
-      <Grid container spacing={3}>
+      </Box>      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
         {/* プロフィール情報セクション */}
-        <Grid item xs={12} md={4}>
+        <Box sx={{ width: { xs: '100%', md: '33.333%' } }}>
           <Paper 
             elevation={2}
             sx={{ 
@@ -281,12 +278,11 @@ const ProfilePage: React.FC = () => {
                   </Button>
                 </Box>
               </Box>
-            )}
-          </Paper>
-        </Grid>
+            )}          </Paper>
+        </Box>
 
         {/* レシピ関連セクション */}
-        <Grid item xs={12} md={8}>
+        <Box sx={{ width: { xs: '100%', md: '66.667%' } }}>
           <Paper elevation={2} sx={{ p: 0 }}>
             <Tabs
               value={tabValue}
@@ -307,10 +303,9 @@ const ProfilePage: React.FC = () => {
                 <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 500 }}>
                   お気に入りレシピ
                 </Typography>
-                
-                <Grid container spacing={2}>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                   {FAVORITE_RECIPES.map((recipe) => (
-                    <Grid item xs={12} sm={6} key={recipe.id}>
+                    <Box key={recipe.id} sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
                       <Card variant="outlined">
                         <CardContent sx={{ pt: 2, pb: 1 }}>
                           <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
@@ -343,22 +338,21 @@ const ProfilePage: React.FC = () => {
                           <Button size="small">詳細</Button>
                           <IconButton size="small" color="error">
                             <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </CardActions>
+                          </IconButton>                        </CardActions>
                       </Card>
-                    </Grid>
+                    </Box>
                   ))}
                   
                   {FAVORITE_RECIPES.length === 0 && (
-                    <Grid item xs={12}>
+                    <Box sx={{ width: '100%' }}>
                       <Box sx={{ textAlign: 'center', py: 4 }}>
                         <Typography variant="body2" color="text.secondary">
                           お気に入りのレシピはまだありません
                         </Typography>
                       </Box>
-                    </Grid>
+                    </Box>
                   )}
-                </Grid>
+                </Box>
               </Box>
             </TabPanel>
 
@@ -460,10 +454,9 @@ const ProfilePage: React.FC = () => {
                   </Button>
                 </Box>
               </Box>
-            </TabPanel>
-          </Paper>
-        </Grid>
-      </Grid>
+            </TabPanel>          </Paper>
+        </Box>
+      </Box>
       
       {/* 通知スナックバー */}
       <Snackbar

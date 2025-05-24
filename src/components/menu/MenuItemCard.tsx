@@ -78,10 +78,9 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({
       onItemClick(item);
     }
   };
-
   // デバッグ用：プロパティの確認
   React.useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.debug(`MenuItemCard rendered: ${itemId}`, {
         item,
         date: date.toISOString(),

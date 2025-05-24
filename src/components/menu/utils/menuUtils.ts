@@ -29,27 +29,33 @@ export const convertMenusToDays = (menusArr: any[], weekStart: Date): DayData[] 
     
     const meals: MealData[] = mealTypes.map(type => {
       const item = menuItems.find((mi: any) => mi.mealType === type);
-      
-      return item ? {
+        return item ? {
         id: item.id,
         type: type,
         name: item.name || '',
         recipeId: item.recipeId || null,
         isOuting: item.isOutside || false,
         restaurantName: item.outsideLocation || '',
-        notes: item.notes || ''
+        notes: item.notes || '',
+        menuItems: [],
+        mealType: type,
       } : {
         id: `empty-${date.toISOString()}-${type}`,
         type: type,
-        name: '',
-        recipeId: null,
+        name: '',        recipeId: null,
         isOuting: false,
         restaurantName: '',
-        notes: ''
+        notes: '',
+        menuItems: [],
+        mealType: type
       };
     });
     
-    days.push({ date, meals });
+    days.push({ 
+      id: `day-${dateUtils.toYMDString(date)}`,
+      date, 
+      meals 
+    });
   }
   
   return days;
@@ -61,13 +67,9 @@ export const convertMenusToDays = (menusArr: any[], weekStart: Date): DayData[] 
 export const convertMealToMenuItem = (meal: MealData): MenuItemData => {
   return {
     id: meal.id,
-    mealType: meal.type,
-    isOutside: meal.isOuting || false,
-    outsideLocation: meal.restaurantName || '',
-    notes: meal.notes || '',
-    menuId: '', // この値は使用されません
     name: meal.name,
-    recipeId: meal.recipeId || undefined
+    recipeId: meal.recipeId || undefined,
+    description: meal.notes || '',
   };
 };
 
@@ -78,17 +80,47 @@ export const generatePreviousWeekDays = (currentWeekFirstDay: Date): DayData[] =
   const previousFirstDay = new Date(currentWeekFirstDay);
   previousFirstDay.setDate(currentWeekFirstDay.getDate() - 7);
   const previousWeekStart = dateUtils.getStartOfWeek(previousFirstDay);
-  
-  // 前の週のデータを生成
+    // 前の週のデータを生成
   return Array(7).fill(null).map((_, index) => {
     const date = new Date(previousWeekStart);
     date.setDate(previousWeekStart.getDate() + index);
     return {
+      id: `prev-day-${dateUtils.toYMDString(date)}`,
       date,
       meals: [
-        { id: `prev-b${index+1}-${Date.now()}`, type: 'breakfast' as const, isOuting: false, recipeId: null, name: '' },
-        { id: `prev-l${index+1}-${Date.now()}`, type: 'lunch' as const, isOuting: false, recipeId: null, name: '' },
-        { id: `prev-d${index+1}-${Date.now()}`, type: 'dinner' as const, isOuting: false, recipeId: null, name: '' }
+        { 
+          id: `prev-b${index+1}-${Date.now()}`, 
+          type: 'breakfast' as const, 
+          isOuting: false, 
+          recipeId: null, 
+          name: '',
+          menuItems: [],
+          mealType: 'breakfast' as const,
+          restaurantName: '',
+          notes: ''
+        },
+        { 
+          id: `prev-l${index+1}-${Date.now()}`, 
+          type: 'lunch' as const, 
+          isOuting: false, 
+          recipeId: null, 
+          name: '',
+          menuItems: [],
+          mealType: 'lunch' as const,
+          restaurantName: '',
+          notes: ''
+        },
+        { 
+          id: `prev-d${index+1}-${Date.now()}`, 
+          type: 'dinner' as const, 
+          isOuting: false, 
+          recipeId: null, 
+          name: '',
+          menuItems: [],
+          mealType: 'dinner' as const,
+          restaurantName: '',
+          notes: ''
+        }
       ]
     };
   });
@@ -101,17 +133,47 @@ export const generateNextWeekDays = (currentWeekLastDay: Date): DayData[] => {
   const nextFirstDay = new Date(currentWeekLastDay);
   nextFirstDay.setDate(currentWeekLastDay.getDate() + 1);
   const nextWeekStart = dateUtils.getStartOfWeek(nextFirstDay);
-  
-  // 新しい次の週のデータを生成
+    // 新しい次の週のデータを生成
   return Array(7).fill(null).map((_, index) => {
     const date = new Date(nextWeekStart);
     date.setDate(nextWeekStart.getDate() + index);
     return {
+      id: `next-day-${dateUtils.toYMDString(date)}`,
       date,
       meals: [
-        { id: `new-b${index+1}-${Date.now()}`, type: 'breakfast' as const, isOuting: false, recipeId: null, name: '' },
-        { id: `new-l${index+1}-${Date.now()}`, type: 'lunch' as const, isOuting: false, recipeId: null, name: '' },
-        { id: `new-d${index+1}-${Date.now()}`, type: 'dinner' as const, isOuting: false, recipeId: null, name: '' }
+        { 
+          id: `new-b${index+1}-${Date.now()}`, 
+          type: 'breakfast' as const, 
+          isOuting: false, 
+          recipeId: null, 
+          name: '',
+          menuItems: [],
+          mealType: 'breakfast' as const,
+          restaurantName: '',
+          notes: ''
+        },
+        { 
+          id: `new-l${index+1}-${Date.now()}`, 
+          type: 'lunch' as const, 
+          isOuting: false, 
+          recipeId: null, 
+          name: '',
+          menuItems: [],
+          mealType: 'lunch' as const,
+          restaurantName: '',
+          notes: ''
+        },
+        { 
+          id: `new-d${index+1}-${Date.now()}`, 
+          type: 'dinner' as const, 
+          isOuting: false, 
+          recipeId: null, 
+          name: '',
+          menuItems: [],
+          mealType: 'dinner' as const,
+          restaurantName: '',
+          notes: ''
+        }
       ]
     };
   });

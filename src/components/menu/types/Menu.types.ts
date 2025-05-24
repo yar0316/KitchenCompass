@@ -11,6 +11,7 @@ export interface MealData {
   isOutside?: boolean;
   outsideLocation?: string;
   restaurantName?: string;
+  notes?: string;
 }
 
 export interface MenuItemData {
