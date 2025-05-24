@@ -6,19 +6,13 @@ import {
   Paper, 
   Card, 
   CardActionArea,
-  Chip,
-  Divider,
-  IconButton,
-  List
+  Chip
 } from '@mui/material';
 import BreakfastDiningIcon from '@mui/icons-material/BreakfastDining';
 import LunchDiningIcon from '@mui/icons-material/LunchDining';
 import DinnerDiningIcon from '@mui/icons-material/DinnerDining';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import AddIcon from '@mui/icons-material/Add';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
-import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import AddIcon from '@mui/icons-material/Add';
 import { 
   DndContext, 
   closestCenter, 
@@ -29,7 +23,6 @@ import {
   DragOverlay,
   DragStartEvent,
   Active,
-  UniqueIdentifier,
   useDroppable
 } from '@dnd-kit/core';
 import {
@@ -40,43 +33,14 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-
-interface MenuItem {
-  id: string;
-  name: string;
-  recipeId: string | null;
-}
-
-interface MealData {
-  id: string;
-  name: string;
-  type: 'breakfast' | 'lunch' | 'dinner';
-  recipeId: string | null;
-  menuItems?: MenuItem[];
-  isOuting?: boolean;
-  restaurantName?: string;
-  notes?: string;
-}
-
-interface DayData {
-  date: Date;
-  meals: MealData[];
-}
-
-interface WeekData {
-  id: string;
-  startDate: Date;
-  days: DayData[];
-}
+import { MealData, WeekData, ViewUnit, MenuItemData } from './types/Menu.types';
 
 interface WeeklyMenuPlanProps {
   weekData: WeekData;
-  onMealClick: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner', existingMeal?: MealData) => void;
+  onMealClick: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner', existingMeal?: MealData | null) => void;
   onRecipeClick?: (recipeId: string) => void;  // レシピIDを受け取って詳細を表示するための関数
-  viewUnit: 'day' | 'threeDay' | 'week';
-  onNext?: () => void;
-  onPrevious?: () => void;
-  onMoveMeal?: (meal: MealData, fromDate: Date, toDate: Date, toType: 'breakfast' | 'lunch' | 'dinner') => void;
+  viewUnit: ViewUnit;
+  onMoveMeal: (meal: MealData, fromDate: Date, toDate: Date, toType: 'breakfast' | 'lunch' | 'dinner') => void;
 }
 
 // ドラッグ中アイテムのプレビュー用コンポーネント
@@ -114,13 +78,11 @@ const MenuItemCard = ({
   item, 
   date, 
   mealType, 
-  index,
   onItemClick 
 }: { 
-  item: MenuItem; 
+  item: MenuItemData; 
   date: Date; 
   mealType: 'breakfast' | 'lunch' | 'dinner';
-  index: number;
   onItemClick: () => void; 
 }) => {
   // ユニークなID生成（日付+食事タイプ+アイテムID）
@@ -128,8 +90,6 @@ const MenuItemCard = ({
   
   // DnD-kitのドラッグ機能を使用
   const {
-    attributes,
-    listeners,
     setNodeRef,
     transform,
     transition,
@@ -172,8 +132,6 @@ const MenuItemCard = ({
         ...style,
         cursor: 'grab', // ドラッグ可能であることを示すカーソル
       }}
-      {...attributes}
-      {...listeners}
     >
       <CardActionArea 
         onClick={handleClick}
@@ -223,16 +181,13 @@ const DraggableMealItem = ({
 }: { 
   meal: MealData; 
   date: Date; 
-  onMealClick: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner', existingMeal?: MealData) => void;
+  onMealClick: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner', existingMeal?: MealData | null) => void;
   onRecipeClick?: (recipeId: string) => void;
 }) => {
   // ユニークなID（日付 + タイプ + ID）
   const itemId = `${date.toISOString()}-${meal.type}-${meal.id}`;
-  
-  // DnD-kitのソート機能を使用
+    // DnD-kitのソート機能を使用
   const {
-    attributes,
-    listeners,
     setNodeRef,
     transform,
     transition,
@@ -310,9 +265,8 @@ const DraggableMealItem = ({
   const menuItemIds = menuItems.map((item) => 
     `item-${date.toISOString()}-${meal.type}-${item.id}`
   );
-
   // メニューアイテムクリック時の処理
-  const handleItemClick = (item: MenuItem) => {
+  const handleItemClick = (item: MenuItemData) => {
     if (item.recipeId && onRecipeClick) {
       onRecipeClick(item.recipeId);
     } else {
@@ -422,14 +376,12 @@ const DraggableMealItem = ({
               // 通常の献立表示（カード形式）
               hasMultipleItems ? (
                 <Box sx={{ mt: 0.5 }}>
-                  <SortableContext items={menuItemIds} strategy={verticalListSortingStrategy}>
-                    {menuItems.map((item, index) => (
+                  <SortableContext items={menuItemIds} strategy={verticalListSortingStrategy}>                    {menuItems.map((item) => (
                       <MenuItemCard
                         key={item.id}
                         item={item}
                         date={date}
                         mealType={meal.type}
-                        index={index}
                         onItemClick={() => handleItemClick(item)}
                       />
                     ))}
@@ -458,13 +410,11 @@ const DraggableMealItem = ({
                 </Box>
               ) : (
                 // 単一アイテムの場合もカード表示
-                <Box sx={{ mt: 0.5 }}>
-                  <SortableContext items={menuItemIds} strategy={verticalListSortingStrategy}>
+                <Box sx={{ mt: 0.5 }}>                  <SortableContext items={menuItemIds} strategy={verticalListSortingStrategy}>
                     <MenuItemCard
                       item={menuItems[0]}
                       date={date}
                       mealType={meal.type}
-                      index={0}
                       onItemClick={() => handleItemClick(menuItems[0])}
                     />
                   </SortableContext>
@@ -511,7 +461,7 @@ const DroppableMealZone = ({
   children: React.ReactNode;
   date: Date;
   mealType: 'breakfast' | 'lunch' | 'dinner';
-  onMealClick: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner', existingMeal?: MealData) => void;
+  onMealClick: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner', existingMeal?: MealData | null) => void;
 }) => {
   const { isOver, setNodeRef } = useDroppable({
     id: `drop-${date.toISOString()}-${mealType}`,
@@ -551,13 +501,14 @@ const DroppableMealZone = ({
     if (existingMeal) {
       // 既存のメニューデータがある場合はそれを使う
       onMealClick(date, mealType, existingMeal);
-    } else {
-      // 見つからない場合は空のメニューデータを生成
+    } else {      // 見つからない場合は空のメニューデータを生成
       const emptyMeal = {
         id: `empty-${date.toISOString()}-${mealType}`,
         name: '',
         type: mealType,
-        recipeId: null
+        recipeId: null,
+        menuItems: [],
+        mealType: mealType
       };
       onMealClick(date, mealType, emptyMeal);
     }
@@ -586,15 +537,15 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
   weekData, 
   onMealClick,
   onRecipeClick,
-  viewUnit,
-  onNext,
-  onPrevious,
+  viewUnit: _viewUnit,
   onMoveMeal
 }) => {
   // ドラッグしているアイテムの状態
   const [activeItem, setActiveItem] = useState<Active | null>(null);
-  // ステータスは内部でのみ使用し、表示しない
-  const [status, setStatus] = useState<string | null>(null);
+    // viewUnitは将来的な機能拡張で使用予定（現在は一時的に参照のみ）
+  if (_viewUnit) {
+    // 将来的にはviewUnitに応じて表示を変更する予定
+  }
   
   // ドラッグ操作のセンサーを定義（ポインター操作のみ）
   const sensors = useSensors(
@@ -635,17 +586,26 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
     
     if (active.id === over.id) {
       return;
-    }
-
-    try {
+    }    try {
       // ドラッグしたアイテムのデータを取得
-      const activeData = active.data.current as any;
+      const activeData = active.data.current as { 
+        item?: MenuItemData; 
+        meal?: MealData; 
+        date?: Date; 
+        mealType?: 'breakfast' | 'lunch' | 'dinner';
+        [key: string]: unknown;
+      };
       if (!activeData) {
         return;
       }
       
       // ドロップ先のデータを取得
-      const overData = over.data.current as any;
+      const overData = over.data.current as { 
+        date?: Date; 
+        mealType?: 'breakfast' | 'lunch' | 'dinner'; 
+        meal?: MealData;
+        [key: string]: unknown;
+      };
       if (!overData) {
         return;
       }
@@ -686,10 +646,10 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
           const parts = overId.split('-');
           if (parts.length >= 3) {
             // ISO日付部分を取得
-            const dateStr = parts[1];
-            try {
+            const dateStr = parts[1];            try {
               targetDate = new Date(dateStr);
-            } catch (e) {
+            } catch {
+              // 日付のパースに失敗した場合は何もしない
             }
           }
         }
@@ -699,32 +659,52 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
       if (!targetDate || !targetType) {
         return;
       }
-      
-      // 移動元の情報を収集
+        // 移動元の情報を収集
       let sourceDate: Date | null = null;
       let sourceType: 'breakfast' | 'lunch' | 'dinner' | null = null;
-      let mealToMove: any = null;
-      
-      if (isMenuItem && activeData.item) {
+      let mealToMove: MealData | null = null;
+        if (isMenuItem && activeData.item) {        
         // メニューアイテムの場合
         const { item, date, mealType } = activeData;
+        
+        // 型ガード: undefinedチェック
+        if (!date || !mealType) {
+          return;
+        }
+        
         sourceDate = date;
         sourceType = mealType;
         mealToMove = {
           id: item.id,
           name: item.name,
           type: mealType,
-          recipeId: item.recipeId
+          recipeId: item.recipeId,
+          menuItems: [{
+            id: item.id,
+            name: item.name,
+            recipeId: item.recipeId
+          }],
+          mealType: mealType
         };
-      } else if (isActiveAMeal) {
+      } else if (isActiveAMeal) {        
         // 食事枠全体の場合
-        sourceDate = activeData.date;
-        sourceType = activeData.meal ? activeData.meal.type : activeData.mealType;
+        const date = activeData.date;
+        const mealType = activeData.meal ? activeData.meal.type : activeData.mealType;
+        
+        // 型ガード: undefinedチェック
+        if (!date || !mealType) {
+          return;
+        }
+        
+        sourceDate = date;
+        sourceType = mealType;
         mealToMove = activeData.meal || {
           id: `meal-${Date.now()}`,
           name: '',
-          type: sourceType,
-          recipeId: null
+          type: mealType,
+          recipeId: null,
+          menuItems: [],
+          mealType: mealType
         };
       } else {
         return;
@@ -739,35 +719,11 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
       if (!onMoveMeal) {
         return;
       }
-      
-      // 親コンポーネントのコールバックを呼び出し
+        // 親コンポーネントのコールバックを呼び出し
       onMoveMeal(mealToMove, sourceDate, targetDate, targetType);
-    } catch (error) {
+    } catch {
+      // ドラッグ&ドロップ処理でエラーが発生した場合は何もしない
     }
-  };
-
-  // 表示単位に応じたタイトル表示
-  const renderUnitTitle = () => {
-    if (weekData.days.length === 0) return null;
-    
-    if (viewUnit === 'day') {
-      const day = weekData.days[0]; // 1日表示の場合は最初（唯一）の日
-      return (
-        <Typography variant="h6" align="center" sx={{ mb: 1 }}>
-          {format(day.date, 'yyyy年M月d日(E)', { locale: ja })}
-        </Typography>
-      );
-    } else if (viewUnit === 'threeDay') {
-      const startDay = weekData.days[0];
-      const endDay = weekData.days[weekData.days.length - 1];
-      return (
-        <Typography variant="h6" align="center" sx={{ mb: 1 }}>
-          {format(startDay.date, 'M月d日(E)', { locale: ja })} - {format(endDay.date, 'M月d日(E)', { locale: ja })}
-        </Typography>
-      );
-    }
-    // 週表示の場合はタイトル不要
-    return null;
   };
 
   // DnD-kitコンテキストの作成
@@ -776,23 +732,7 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
     const allMealIds = weekData.days.flatMap(day => 
       ['breakfast', 'lunch', 'dinner'].map(mealType => 
         `${day.date.toISOString()}-${mealType}`
-      )
-    );
-
-    // 表示単位に応じてグリッドの幅を設定
-    const getGridWidth = () => {
-      switch (viewUnit) {
-        case 'day':
-          return 12; // 1日表示の場合は画面幅いっぱい
-        case 'threeDay':
-          return 4; // 3日表示の場合は1/3ずつ
-        case 'week':
-          // 均等分割をより正確に - 7日の場合は12/7で均等に
-          return weekData.days.length > 0 ? 12 / weekData.days.length : 12/7;
-        default:
-          return 12 / weekData.days.length;
-      }
-    };
+      )    );
 
     return (
       <DndContext
@@ -811,11 +751,8 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
               width: '100%',
               flexWrap: 'nowrap'
             }}
-          >
-            {weekData.days.map((day, dayIndex) => (
-              <Grid 
-                item 
-                xs={getGridWidth()} 
+          >            {weekData.days.map((day, dayIndex) => (
+              <Box
                 key={`day-${dayIndex}`} 
                 sx={{ 
                   height: '100%', 
@@ -862,12 +799,13 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
                   {/* 各食事タイプのカード */}
                   <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     {['breakfast', 'lunch', 'dinner'].map((mealType) => {
-                      const mealTypeTyped = mealType as 'breakfast' | 'lunch' | 'dinner';
-                      const meal = day.meals.find(m => m.type === mealTypeTyped) || {
+                      const mealTypeTyped = mealType as 'breakfast' | 'lunch' | 'dinner';                      const meal = day.meals.find(m => m.type === mealTypeTyped) || {
                         id: `empty-${day.date.toISOString()}-${mealType}`,
                         name: '',
                         type: mealTypeTyped,
-                        recipeId: null
+                        recipeId: null,
+                        menuItems: [],
+                        mealType: mealTypeTyped
                       };
                       
                       return (
@@ -888,8 +826,7 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
                       );
                     })}
                   </Box>
-                </Paper>
-              </Grid>
+                </Paper>                </Box>
             ))}
           </Grid>
         </SortableContext>
@@ -904,20 +841,24 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
 
   return (
     <Box sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* ヘッダー */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-        <IconButton onClick={onPrevious} size="small">
-          <ArrowBackIcon />
-        </IconButton>
-        {renderUnitTitle()}
-        <IconButton onClick={onNext} size="small">
-          <ArrowForwardIcon />
-        </IconButton>
-      </Box>
-      
       {/* 献立表示 */}
       <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
-        {renderDraggableMeals()}
+        {weekData.days.length === 0 ? (
+          // days配列が空の場合、ローディング表示
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            height: '100%' 
+          }}>
+            <Typography variant="body1" color="text.secondary">
+              データを読み込み中...
+            </Typography>
+          </Box>
+        ) : (
+          // データがある場合は通常表示
+          renderDraggableMeals()
+        )}
       </Box>
     </Box>
   );

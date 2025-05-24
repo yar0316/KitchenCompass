@@ -71,6 +71,9 @@ const schema = a.schema({
       createdBy: a.string(),
       // 所有者（認証用）
       owner: a.string(),
+      
+      // MenuItem との関連付け
+      menuItems: a.hasMany('MenuItem', 'recipeId'),
     })
     // 元の認証設定（コメントアウト）
     // .authorization((allow) => [
@@ -99,6 +102,7 @@ const schema = a.schema({
   MenuItem: a
     .model({
       // 基本情報
+      name: a.string(), // メニュー項目の名前を追加
       mealType: a.string().required(), // 朝食、昼食、夕食など
       isOutside: a.boolean().default(false), // 外食かどうか
       outsideLocation: a.string(), // 外食先
@@ -109,7 +113,10 @@ const schema = a.schema({
       
       // リレーション - 修正：belongsTo構文
       menu: a.belongsTo('Menu', 'menuId'),
-      recipeId: a.string(), // レシピID
+      
+      // レシピ関連
+      recipeId: a.string(), // レシピID（任意）
+      recipe: a.belongsTo('Recipe', 'recipeId'), // Recipeモデルとの関連付け
     })
     // 元の認証設定（コメントアウト）
     // .authorization((allow) => allow.owner())

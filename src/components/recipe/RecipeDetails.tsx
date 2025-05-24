@@ -32,9 +32,7 @@ import EventNoteIcon from '@mui/icons-material/EventNote';
 import PersonIcon from '@mui/icons-material/Person';
 import CloseIcon from '@mui/icons-material/Close';
 import RecipeFormDialog from './RecipeFormDialog';
-
-// グレーのダミー画像URL（実際のデプロイ時には差し替える）
-const DUMMY_IMAGE_URL = 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%22320%22 height%3D%22180%22 viewBox%3D%220 0 320 180%22 fill%3D%22%23e0e0e0%22%3E%3Crect width%3D%22320%22 height%3D%22180%22%2F%3E%3C%2Fsvg%3E';
+import { DUMMY_IMAGE_URL } from '../../mock/recipeData';
 
 // カテゴリに対応するラベル
 const CATEGORY_LABELS: Record<string, string> = {

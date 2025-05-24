@@ -31,6 +31,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import ImageIcon from '@mui/icons-material/Image';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import { DUMMY_IMAGE_URL } from '../../mock/recipeData';
 
 // タブパネルのプロパティ
 interface TabPanelProps {
@@ -100,9 +101,6 @@ const EXISTING_TAGS = [
   'デザート', 'ベジタリアン', '朝食', 'ヘルシー', '定番', '簡単', 
   '時短', 'おもてなし', '作り置き', 'お弁当'
 ];
-
-// ダミー画像URL
-const DUMMY_IMAGE_URL = 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22 width%3D%22320%22 height%3D%22180%22 viewBox%3D%220 0 320 180%22 fill%3D%22%23e0e0e0%22%3E%3Crect width%3D%22320%22 height%3D%22180%22%2F%3E%3C%2Fsvg%3E';
 
 interface RecipeFormDialogProps {
   open: boolean;

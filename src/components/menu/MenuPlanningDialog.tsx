@@ -8,24 +8,17 @@ import {
   TextField,
   Box,
   Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Autocomplete,
-  Divider,
-  IconButton,
   FormControlLabel,
   Switch,
   Collapse,
   Alert,
   CircularProgress,
-  Chip,
   List,
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
-  Fab,
+  IconButton,
+  Divider,
   ClickAwayListener
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -39,15 +32,10 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
+import { generateClient } from 'aws-amplify/api';
+import { Schema } from '../../amplify/data/resource';
 
-// モックデータ：レシピのサンプル
-const MOCK_RECIPES = [
-  { id: '1', name: 'トマトとモッツァレラのカプレーゼ', cookingTime: 10 },
-  { id: '2', name: '基本の肉じゃが', cookingTime: 40 },
-  { id: '3', name: 'アボカドとエビのサラダ', cookingTime: 15 },
-  { id: '4', name: '手作りピザ', cookingTime: 60 },
-  { id: '5', name: '鶏肉の照り焼き', cookingTime: 25 }
-];
+const client = generateClient<Schema>();
 
 interface MenuItem {
   id: string;
@@ -64,7 +52,6 @@ interface MenuPlanningDialogProps {
   editingMeal: any | null;
 }
 
-// 外食用のカテゴリ
 interface OutingInfo {
   isOuting: boolean;
   restaurantName: string;
@@ -79,7 +66,6 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
   mealType,
   editingMeal
 }) => {
-  // 複数のメニュー項目を管理するための状態
   const [menuItems, setMenuItems] = useState<MenuItem[]>([
     { id: `menu-${Date.now()}`, name: '', recipeId: null }
   ]);
@@ -87,35 +73,32 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [tempItemName, setTempItemName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-  
-  // 各メニュー入力用の状態
-  const [selectedRecipe, setSelectedRecipe] = useState<{ id: string; name: string } | null>(null);
+
+  const [selectedRecipe, setSelectedRecipe] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredRecipes, setFilteredRecipes] = useState(MOCK_RECIPES);
-  
-  // レシピの自動生成関連
+  const [allRecipes, setAllRecipes] = useState<any[]>([]);
+  const [filteredRecipes, setFilteredRecipes] = useState<any[]>([]);
+  const [loadingRecipes, setLoadingRecipes] = useState(false);
+
   const [generatingRecipe, setGeneratingRecipe] = useState(false);
-  
-  // 外食情報
+
   const [outingInfo, setOutingInfo] = useState<OutingInfo>({
     isOuting: false,
     restaurantName: '',
     notes: ''
   });
-  
-  // メニューアイテム追加
+
   const handleAddMenuItem = () => {
-    const newItem = { 
-      id: `menu-${Date.now()}`, 
-      name: '', 
-      recipeId: null 
+    const newItem = {
+      id: `menu-${Date.now()}`,
+      name: '',
+      recipeId: null
     };
-    
+
     setMenuItems([...menuItems, newItem]);
     setCurrentEditingItem(newItem);
     setSelectedRecipe(null);
-    
-    // 追加したらすぐに編集状態にする
+
     setEditingItemId(newItem.id);
     setTempItemName('');
     setTimeout(() => {
@@ -125,68 +108,57 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
     }, 100);
   };
 
-  // レシピから新しいメニューアイテムを追加
   const handleAddMenuItemFromRecipe = (recipe: { id: string; name: string }) => {
     if (!recipe) return;
-    
-    // 新しいメニューアイテムを作成
+
     const newItem = {
       id: `menu-${Date.now()}`,
       name: recipe.name,
       recipeId: recipe.id
     };
-    
-    // メニューアイテムリストに追加
+
     const updatedItems = [...menuItems, newItem];
     setMenuItems(updatedItems);
-    
-    // 新しく追加したアイテムを現在の編集項目に設定
+
     setCurrentEditingItem(newItem);
     setSelectedRecipe(recipe);
   };
-  
-  // メニューアイテム削除
+
   const handleDeleteMenuItem = (itemId: string) => {
     if (menuItems.length <= 1) {
-      // 最後の一つは削除しない
       return;
     }
-    
+
     const updatedItems = menuItems.filter(item => item.id !== itemId);
     setMenuItems(updatedItems);
-    
+
     if (currentEditingItem && currentEditingItem.id === itemId) {
       setCurrentEditingItem(updatedItems[0] || null);
-      
-      // 選択した項目の情報をフォームにセット
+
       if (updatedItems[0]) {
-        const recipe = updatedItems[0].recipeId 
-          ? MOCK_RECIPES.find(r => r.id === updatedItems[0].recipeId) || null
+        const recipe = updatedItems[0].recipeId
+          ? allRecipes.find(r => r.id === updatedItems[0].recipeId) || null
           : null;
         setSelectedRecipe(recipe);
       }
     }
-    
-    // 編集中のアイテムが削除された場合
+
     if (editingItemId === itemId) {
       setEditingItemId(null);
     }
   };
-  
-  // メニューアイテム選択
+
   const handleSelectMenuItem = (item: MenuItem) => {
     setCurrentEditingItem(item);
-    
-    // 選択した項目の情報をフォームにセット
+
     if (item.recipeId) {
-      const recipe = MOCK_RECIPES.find(r => r.id === item.recipeId);
+      const recipe = allRecipes.find(r => r.id === item.recipeId);
       setSelectedRecipe(recipe || null);
     } else {
       setSelectedRecipe(null);
     }
   };
-  
-  // インライン編集開始
+
   const handleStartEditing = (item: MenuItem) => {
     setEditingItemId(item.id);
     setTempItemName(item.name);
@@ -197,8 +169,7 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
       }
     }, 100);
   };
-  
-  // インライン編集終了と保存
+
   const handleFinishEditing = () => {
     if (editingItemId) {
       const updatedItems = menuItems.map(item => {
@@ -215,13 +186,11 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
     }
   };
 
-  // 日付フォーマット（年月日）
   const formatFullDate = (date: Date | null) => {
     if (!date) return '';
     return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
   };
 
-  // 食事タイプのラベルとアイコンを取得
   const getMealTypeInfo = () => {
     switch (mealType) {
       case 'breakfast':
@@ -235,37 +204,32 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
     }
   };
 
-  // レシピの自動生成をシミュレート
   const handleGenerateRecipe = (itemName: string) => {
     if (!currentEditingItem) return;
-    
+
     setGeneratingRecipe(true);
-    
-    // APIリクエストの代わりに2秒後に結果を返す模擬処理
+
     setTimeout(() => {
-      // ダミーのレシピデータ（実際のAPIレスポンスをシミュレート）
       const generatedRecipe = {
         id: `generated-${Date.now()}`,
         name: `${itemName}のレシピ`,
-        cookingTime: Math.floor(Math.random() * 30) + 10, // 10-40分
+        cookingTime: Math.floor(Math.random() * 30) + 10,
         ingredients: ['材料1', '材料2', '材料3'],
         steps: ['手順1', '手順2', '手順3']
       };
-      
-      // 生成されたレシピを使って新しいメニューアイテムを追加
+
       handleAddMenuItemFromRecipe({
         id: generatedRecipe.id,
         name: generatedRecipe.name
       });
-      
+
       setGeneratingRecipe(false);
     }, 2000);
   };
-  
-  // 現在編集中のメニューアイテムの更新（レシピ選択）
+
   const handleUpdateMenuItemRecipe = (recipe: { id: string; name: string } | null) => {
     if (!currentEditingItem || !recipe) return;
-    
+
     const updatedItems = menuItems.map(item => {
       if (item.id === currentEditingItem.id) {
         return {
@@ -276,29 +240,48 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
       }
       return item;
     });
-    
+
     setMenuItems(updatedItems);
   };
 
-  // ダイアログが開かれた時に初期値を設定
+  useEffect(() => {
+    if (open) {
+      setLoadingRecipes(true);
+      client.models.Recipe.list({})
+        .then(res => {
+          setAllRecipes(res.data || []);
+          setFilteredRecipes(res.data || []);
+        })
+        .finally(() => setLoadingRecipes(false));
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      const results = allRecipes.filter(recipe =>
+        (recipe.name || '').toLowerCase().includes(query)
+      );
+      setFilteredRecipes(results);
+    } else {
+      setFilteredRecipes(allRecipes);
+    }
+  }, [searchQuery, allRecipes]);
+
   useEffect(() => {
     if (open && editingMeal) {
-      // 既存の献立編集の場合
       if (editingMeal.menuItems && Array.isArray(editingMeal.menuItems) && editingMeal.menuItems.length > 0) {
-        // 複数メニュー対応済みの場合
         setMenuItems(editingMeal.menuItems);
         setCurrentEditingItem(editingMeal.menuItems[0]);
-        
-        // 最初のアイテムの情報をフォームにセット
+
         const firstItem = editingMeal.menuItems[0];
         if (firstItem.recipeId) {
-          const recipe = MOCK_RECIPES.find(r => r.id === firstItem.recipeId);
+          const recipe = allRecipes.find(r => r.id === firstItem.recipeId);
           setSelectedRecipe(recipe || null);
         } else {
           setSelectedRecipe(null);
         }
       } else {
-        // 旧形式の場合は変換
         const initialItem = {
           id: `menu-${Date.now()}`,
           name: editingMeal.name || '',
@@ -306,16 +289,15 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
         };
         setMenuItems([initialItem]);
         setCurrentEditingItem(initialItem);
-        
+
         if (editingMeal.recipeId) {
-          const recipe = MOCK_RECIPES.find(r => r.id === editingMeal.recipeId);
+          const recipe = allRecipes.find(r => r.id === editingMeal.recipeId);
           setSelectedRecipe(recipe || null);
         } else {
           setSelectedRecipe(null);
         }
       }
-      
-      // 外食情報があれば設定
+
       if (editingMeal.isOuting) {
         setOutingInfo({
           isOuting: true,
@@ -330,7 +312,6 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
         });
       }
     } else {
-      // 新規作成時はリセット
       const initialItem = { id: `menu-${Date.now()}`, name: '', recipeId: null };
       setMenuItems([initialItem]);
       setCurrentEditingItem(initialItem);
@@ -340,8 +321,7 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
         restaurantName: '',
         notes: ''
       });
-      
-      // 新規作成時は最初のアイテムをすぐに編集状態にする
+
       setEditingItemId(initialItem.id);
       setTempItemName('');
       setTimeout(() => {
@@ -350,53 +330,32 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
         }
       }, 100);
     }
-    
+
     setSearchQuery('');
-    setFilteredRecipes(MOCK_RECIPES);
-  }, [open, editingMeal]);
+    setFilteredRecipes(allRecipes);
+  }, [open, editingMeal, allRecipes]);
 
-  // レシピ検索
-  useEffect(() => {
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const results = MOCK_RECIPES.filter(recipe =>
-        recipe.name.toLowerCase().includes(query)
-      );
-      setFilteredRecipes(results);
-    } else {
-      setFilteredRecipes(MOCK_RECIPES); // 検索クエリが空の場合も全てのレシピを表示
-    }
-  }, [searchQuery]);
-
-  // 保存ハンドラー
   const handleSave = () => {
-    // 編集中の項目があれば保存してから処理
     if (editingItemId) {
       handleFinishEditing();
     }
-    
-    // 有効なメニューアイテムが必要
+
     const hasValidItems = menuItems.some(item => item.name.trim());
     if (!hasValidItems && !outingInfo.isOuting) return;
-    
-    // 空のメニューアイテムを除外
+
     const validMenuItems = menuItems.filter(item => item.name.trim());
-    
+
     const mealData = {
-      // 主要な名前（表示用）は最初のアイテム名を使用
       name: validMenuItems.length > 0 ? validMenuItems[0].name : '',
-      // 複数メニュー項目
       menuItems: validMenuItems,
-      // 外食情報も含める
       isOuting: outingInfo.isOuting,
       restaurantName: outingInfo.isOuting ? outingInfo.restaurantName : '',
       notes: outingInfo.isOuting ? outingInfo.notes : ''
     };
-    
+
     onSave(mealData);
   };
-  
-  // 外食フラグ切り替え
+
   const handleOutingToggle = (event: React.ChangeEvent<HTMLInputElement>) => {
     setOutingInfo({
       ...outingInfo,
@@ -420,8 +379,8 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
         }
       }}
     >
-      <DialogTitle sx={{ 
-        display: 'flex', 
+      <DialogTitle sx={{
+        display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         mb: 0,
@@ -437,20 +396,19 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
           <CloseIcon />
         </IconButton>
       </DialogTitle>
-      
+
       <DialogContent dividers>
         <Box sx={{ mb: 2 }}>
           <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
             {formatFullDate(date)} （{mealTypeInfo.label}）
           </Typography>
         </Box>
-        
-        {/* 外食切り替え */}
+
         <Box sx={{ mb: 3 }}>
           <FormControlLabel
             control={
-              <Switch 
-                checked={outingInfo.isOuting} 
+              <Switch
+                checked={outingInfo.isOuting}
                 onChange={handleOutingToggle}
                 color="primary"
               />
@@ -463,7 +421,7 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
             }
           />
         </Box>
-        
+
         <Collapse in={outingInfo.isOuting}>
           <Box sx={{ mb: 3 }}>
             <TextField
@@ -472,10 +430,10 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
               fullWidth
               variant="outlined"
               value={outingInfo.restaurantName}
-              onChange={(e) => setOutingInfo({...outingInfo, restaurantName: e.target.value})}
+              onChange={(e) => setOutingInfo({ ...outingInfo, restaurantName: e.target.value })}
               sx={{ mb: 2 }}
             />
-            
+
             <TextField
               margin="dense"
               label="メモ"
@@ -484,28 +442,27 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
               rows={2}
               variant="outlined"
               value={outingInfo.notes}
-              onChange={(e) => setOutingInfo({...outingInfo, notes: e.target.value})}
+              onChange={(e) => setOutingInfo({ ...outingInfo, notes: e.target.value })}
             />
           </Box>
         </Collapse>
-        
+
         <Collapse in={!outingInfo.isOuting}>
-          {/* メニューアイテムのリスト */}
           <Box sx={{ mb: 2 }}>
             <Typography variant="subtitle2" gutterBottom>
               メニュー
             </Typography>
-            
-            <List 
-              sx={{ 
-                bgcolor: 'background.paper', 
-                border: '1px solid', 
+
+            <List
+              sx={{
+                bgcolor: 'background.paper',
+                border: '1px solid',
                 borderColor: 'divider',
                 borderRadius: 1
               }}
             >
               {menuItems.map((item) => (
-                <ListItem 
+                <ListItem
                   key={item.id}
                   button={editingItemId !== item.id}
                   selected={currentEditingItem?.id === item.id}
@@ -564,9 +521,9 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
                           </IconButton>
                         )}
                         {menuItems.length > 1 && (
-                          <IconButton 
-                            edge="end" 
-                            size="small" 
+                          <IconButton
+                            edge="end"
+                            size="small"
                             onClick={() => handleDeleteMenuItem(item.id)}
                             sx={{ color: 'error.light' }}
                           >
@@ -579,11 +536,11 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
                 </ListItem>
               ))}
             </List>
-            
+
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-              <Button 
-                color="primary" 
-                startIcon={<AddIcon />} 
+              <Button
+                color="primary"
+                startIcon={<AddIcon />}
                 onClick={handleAddMenuItem}
                 size="small"
               >
@@ -591,16 +548,15 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
               </Button>
             </Box>
           </Box>
-          
+
           <Divider sx={{ my: 2 }} />
-          
-          {/* レシピ選択セクション */}
+
           {currentEditingItem && (
             <Box sx={{ mb: 3 }}>
               <Typography variant="subtitle2" gutterBottom>
                 レシピからメニューを追加
               </Typography>
-              
+
               <TextField
                 margin="dense"
                 label="レシピを検索"
@@ -614,9 +570,13 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
                 sx={{ mb: 2 }}
                 disabled={outingInfo.isOuting}
               />
-              
+
               <Box sx={{ maxHeight: 300, overflow: 'auto', mb: 2 }}>
-                {filteredRecipes.length > 0 ? (
+                {loadingRecipes ? (
+                  <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 2 }}>
+                    読み込み中...
+                  </Typography>
+                ) : filteredRecipes.length > 0 ? (
                   filteredRecipes.map((recipe) => (
                     <Box
                       key={recipe.id}
@@ -658,14 +618,14 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
                   </Typography>
                 )}
               </Box>
-              
+
               {currentEditingItem.name && !currentEditingItem.recipeId && (
                 <Box sx={{ mt: 2 }}>
-                  <Alert 
-                    severity="info" 
+                  <Alert
+                    severity="info"
                     action={
-                      <Button 
-                        color="inherit" 
+                      <Button
+                        color="inherit"
                         size="small"
                         onClick={() => handleGenerateRecipe(currentEditingItem.name)}
                         disabled={generatingRecipe}
@@ -683,17 +643,17 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
           )}
         </Collapse>
       </DialogContent>
-      
+
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose} color="inherit">
           キャンセル
         </Button>
-        <Button 
-          onClick={handleSave} 
+        <Button
+          onClick={handleSave}
           variant="contained"
           disabled={
-            outingInfo.isOuting ? 
-              !outingInfo.restaurantName.trim() : 
+            outingInfo.isOuting ?
+              !outingInfo.restaurantName.trim() :
               !menuItems.some(item => item.name.trim())
           }
         >
