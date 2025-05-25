@@ -12,43 +12,28 @@ import {
   Switch,
   Divider,
   Button,
-  FormControlLabel,
-  TextField,
   MenuItem,
   FormControl,
-  InputLabel,
   Select,
   SelectChangeEvent,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   Alert,
   Snackbar,
-  Slider,
-  IconButton
+  Slider
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import LanguageIcon from '@mui/icons-material/Language';
 import DataUsageIcon from '@mui/icons-material/DataUsage';
-import SecurityIcon from '@mui/icons-material/Security';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import StorageIcon from '@mui/icons-material/Storage';
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
-import { useTheme } from '@mui/material/styles';
 
 /**
  * 設定画面コンポーネント
  * アプリケーション全体の設定を管理します
  */
 const SettingsPage: React.FC = () => {
-  const theme = useTheme();
-  
   // 設定の状態
   const [settings, setSettings] = useState({
     darkMode: false, // アプリ全体で管理すべき項目だが、例示用に含める
@@ -66,10 +51,10 @@ const SettingsPage: React.FC = () => {
       publicProfile: false
     }
   });
-  
-  // ダイアログの状態
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<'clearData' | 'deleteAccount'>('clearData');
+    // ダイアログの状態
+  // TODO: 将来的にデータ管理機能を実装時に有効化
+  // const [dialogOpen, setDialogOpen] = useState(false);
+  // const [dialogType, setDialogType] = useState<'clearData' | 'deleteAccount'>('clearData');
   
   // スナックバーの状態
   const [snackbar, setSnackbar] = useState({
@@ -87,19 +72,19 @@ const SettingsPage: React.FC = () => {
     
     showSnackbar(`${setting}設定を${event.target.checked ? 'オン' : 'オフ'}にしました`, 'success');
   };
-  
-  // ネストされた設定項目の切り替えハンドラ
-  const handleNestedSwitchChange = (parent: string, setting: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSettings({
-      ...settings,
-      [parent]: {
-        ...settings[parent as keyof typeof settings] as Record<string, boolean>,
-        [setting]: event.target.checked
-      }
-    });
-    
-    showSnackbar(`${setting}設定を${event.target.checked ? 'オン' : 'オフ'}にしました`, 'success');
-  };
+    // ネストされた設定項目の切り替えハンドラ
+  // TODO: 将来的にプライバシー設定を実装時に有効化
+  // const handleNestedSwitchChange = (parent: string, setting: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   setSettings({
+  //     ...settings,
+  //     [parent]: {
+  //       ...settings[parent as keyof typeof settings] as Record<string, boolean>,
+  //       [setting]: event.target.checked
+  //     }
+  //   });
+  //   
+  //   showSnackbar(`${setting}設定を${event.target.checked ? 'オン' : 'オフ'}にしました`, 'success');
+  // };
 
   // セレクト変更ハンドラ
   const handleSelectChange = (setting: string) => (event: SelectChangeEvent<string>) => {
@@ -125,29 +110,30 @@ const SettingsPage: React.FC = () => {
   };
   
   // ダイアログオープンハンドラ
-  const handleOpenDialog = (type: 'clearData' | 'deleteAccount') => {
-    setDialogType(type);
-    setDialogOpen(true);
-  };
-  
-  // ダイアログクローズハンドラ
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-  };
+  // TODO: 将来的にデータ管理機能を実装時に有効化
+  // const handleOpenDialog = (type: 'clearData' | 'deleteAccount') => {
+  //   setDialogType(type);
+  //   setDialogOpen(true);
+  // };
+    // ダイアログクローズハンドラ
+  // TODO: 将来的にデータ管理機能を実装時に有効化
+  // const handleCloseDialog = () => {
+  //   setDialogOpen(false);
+  // };
   
   // データクリア処理
-  const handleClearData = () => {
-    console.log('データクリア処理...');
-    setDialogOpen(false);
-    showSnackbar('すべてのキャッシュデータがクリアされました', 'info');
-  };
+  // const handleClearData = () => {
+  //   console.log('データクリア処理...');
+  //   setDialogOpen(false);
+  //   showSnackbar('すべてのキャッシュデータがクリアされました', 'info');
+  // };
   
   // アカウント削除処理
-  const handleDeleteAccount = () => {
-    console.log('アカウント削除処理...');
-    setDialogOpen(false);
-    showSnackbar('アカウントが削除されました。ログイン画面に戻ります', 'warning');
-  };
+  // const handleDeleteAccount = () => {
+  //   console.log('アカウント削除処理...');
+  //   setDialogOpen(false);
+  //   showSnackbar('アカウントが削除されました。ログイン画面に戻ります', 'warning');
+  // };
 
   // スナックバー表示ハンドラ
   const showSnackbar = (message: string, severity: 'success' | 'info' | 'warning' | 'error') => {
@@ -509,9 +495,9 @@ const SettingsPage: React.FC = () => {
             </Box>
           </Paper>
         </Grid>
-      </Grid>
-      
+      </Grid>      
       {/* 確認ダイアログ */}
+      {/* TODO: 将来的にデータ管理機能を実装時に有効化
       <Dialog
         open={dialogOpen}
         onClose={handleCloseDialog}
@@ -539,6 +525,7 @@ const SettingsPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      */}
       
       {/* スナックバー */}
       <Snackbar

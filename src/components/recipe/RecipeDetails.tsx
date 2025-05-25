@@ -11,10 +11,8 @@ import {
   DialogContent,
   DialogTitle,
   IconButton,
-  Grid,
   Card,
   CardContent,
-  CardMedia,
   List,
   ListItem,
   ListItemText,
@@ -32,20 +30,20 @@ import EventNoteIcon from '@mui/icons-material/EventNote';
 import PersonIcon from '@mui/icons-material/Person';
 import CloseIcon from '@mui/icons-material/Close';
 import RecipeFormDialog from './RecipeFormDialog';
-import { DUMMY_IMAGE_URL } from '../../mock/recipeData';
+import { DUMMY_IMAGE_URL, Recipe } from '../../mock/recipeData';
 
-// カテゴリに対応するラベル
-const CATEGORY_LABELS: Record<string, string> = {
-  main: 'メイン料理',
-  side: '副菜',
-  soup: 'スープ・汁物',
-  salad: 'サラダ',
-  rice: 'ご飯もの',
-  noodle: '麺類',
-  dessert: 'デザート',
-  breakfast: '朝食',
-  other: 'その他'
-};
+// TODO: 将来的にカテゴリ表示機能を実装時に有効化
+// const CATEGORY_LABELS: Record<string, string> = {
+//   main: 'メイン料理',
+//   side: '副菜',
+//   soup: 'スープ・汁物',
+//   salad: 'サラダ',
+//   rice: 'ご飯もの',
+//   noodle: '麺類',
+//   dessert: 'デザート',
+//   breakfast: '朝食',
+//   other: 'その他'
+// };
 
 interface RecipeDetailsProps {
   recipe?: {
@@ -65,7 +63,7 @@ interface RecipeDetailsProps {
   open?: boolean; // ダイアログとして表示するかどうか
   onClose?: () => void; // ダイアログを閉じる関数
   onDelete?: (id: string) => void;
-  onUpdate?: (updatedRecipe: any) => void;
+  onUpdate?: (updatedRecipe: RecipeDetailsProps['recipe']) => void;
 }
 
 const RecipeDetails: React.FC<RecipeDetailsProps> = ({ 
@@ -75,6 +73,14 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
   onDelete, 
   onUpdate 
 }) => {
+  // 状態 - Hooksは必ずコンポーネントのトップレベルで呼び出す
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  
+  // タブセクションの状態
+  const [activeSection, setActiveSection] = useState<'ingredients' | 'steps'>('ingredients');
+
   // recipeがnullまたはundefinedの場合、エラーメッセージを表示
   if (!recipe) {
     if (open && onClose) {
@@ -120,19 +126,9 @@ const RecipeDetails: React.FC<RecipeDetailsProps> = ({
     );
   }
   
-  const { id, name, description, imageUrl, cookingTime, tags } = recipe;
-  
-  // 状態
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  
-  // タブセクションの状態
-  const [activeSection, setActiveSection] = useState<'ingredients' | 'steps'>('ingredients');
-
-  // レシピ更新処理
-  const handleUpdateRecipe = (updatedRecipe: any) => {
-    if (onUpdate) {
+  const { id, name, description, imageUrl, cookingTime, tags } = recipe;  // レシピ更新処理
+  const handleUpdateRecipe = (updatedRecipe: Recipe) => {
+    if (onUpdate && recipe) {
       // 既存のデータと更新データをマージ
       const mergedRecipe = {
         ...recipe,

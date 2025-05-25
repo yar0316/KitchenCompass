@@ -29,7 +29,6 @@ import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import ImageIcon from '@mui/icons-material/Image';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import { DUMMY_IMAGE_URL } from '../../mock/recipeData';
 
@@ -102,11 +101,27 @@ const EXISTING_TAGS = [
   '時短', 'おもてなし', '作り置き', 'お弁当'
 ];
 
+// レシピデータの型定義
+interface Recipe {
+  id?: string;
+  name: string;
+  description: string;
+  cookingTime: number;
+  prepTime?: number;
+  servings?: number;
+  category?: string;
+  tags: string[];
+  imageUrl?: string;
+  ingredients?: Array<{ id: string; name: string; amount: string; unit: string }>;
+  steps?: Array<{ id: string; description: string }>;
+  createdAt?: string;
+}
+
 interface RecipeFormDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (recipe: any) => void;
-  editRecipe?: any; // 編集する既存レシピデータ（編集時のみ）
+  onSave: (recipe: Recipe) => void;
+  editRecipe?: Recipe; // 編集する既存レシピデータ（編集時のみ）
 }
 
 const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({ 
@@ -204,16 +219,15 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
     resetForm();
     onClose();
   };
-  
-  // タブ切り替え
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    // タブ切り替え
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
-
   // タグの削除
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
-  };
+  // TODO: 将来的にタグ削除機能を実装時に有効化
+  // const handleRemoveTag = (tagToRemove: string) => {
+  //   setTags(tags.filter(tag => tag !== tagToRemove));
+  // };
 
   // 材料の追加
   const handleAddIngredient = () => {
@@ -477,12 +491,11 @@ const RecipeFormDialog: React.FC<RecipeFormDialogProps> = ({
           <Box sx={{ mt: 3 }}>
             <Typography variant="subtitle1" gutterBottom>
               タグ
-            </Typography>
-            <Autocomplete
+            </Typography>            <Autocomplete
               multiple
               options={EXISTING_TAGS}
               value={tags}
-              onChange={(event, newValue) => setTags(newValue)}
+              onChange={(_event, newValue) => setTags(newValue)}
               freeSolo
               renderTags={(value: string[], getTagProps) =>
                 value.map((option: string, index: number) => (

@@ -74,9 +74,8 @@ const MenuPlanPage: React.FC = () => {
   const [viewUnit, setViewUnit] = useState<ViewUnit>('week');
   const [viewStartDate, setViewStartDate] = useState<Date>(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | null>(null);
-  const [editingMeal, setEditingMeal] = useState<MenuItemData | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);  const [selectedMealType, setSelectedMealType] = useState<'breakfast' | 'lunch' | 'dinner' | null>(null);
+  const [editingMeal, setEditingMeal] = useState<MealData | null>(null);
   const [snackbar, setSnackbar] = useState<SnackbarState>({
     open: false,
     message: '',
@@ -135,8 +134,7 @@ const MenuPlanPage: React.FC = () => {
         // 週表示の場合、viewStartDateを含む週の開始日から7日分を生成
         const weekStart = dateUtils.getStartOfWeek(viewStartDate);
         const weekDays = dateUtils.generateWeekDays(weekStart);
-        
-        // 既存データがある場合はそれを使用、なければ空のデータを生成
+          // 既存データがある場合はそれを使用、なければ空のデータを生成
         return weekDays.map(date => {
           const existingDay = allDays.find(day => dateUtils.isSameDay(day.date, date));
           if (existingDay) {
@@ -144,6 +142,7 @@ const MenuPlanPage: React.FC = () => {
           }
           // 既存データがない場合は空のデータを生成
           return {
+            id: `day-${date.toISOString().split('T')[0]}`,
             date,
             meals: []
           };
@@ -311,9 +310,8 @@ const MenuPlanPage: React.FC = () => {
     
     setEditingMeal(menuItemData);
     setIsDialogOpen(true);
-  };
-  // 献立保存処理のラッパー
-  const handleSaveMealWrapper = async (mealData: MenuItemData) => {
+  };  // 献立保存処理のラッパー
+  const handleSaveMealWrapper = async (mealData: MealData) => {
     if (!selectedDate || !selectedMealType) return;
     
     try {
@@ -368,16 +366,20 @@ const MenuPlanPage: React.FC = () => {
     if (!newTemplateName.trim()) return;
     
     const currentWeekData = menuPlans.currentWeek;
-    
-    const newTemplate: Template = {
+      const newTemplate: Template = {
       id: `template-${Date.now()}`,
       name: newTemplateName,
       description: newTemplateDescription,
       days: currentWeekData.days.map(day => ({
-        meals: day.meals.map(item => ({
-          type: item.type,
-          name: item.name,
-          recipeId: item.recipeId
+        id: day.id,
+        date: day.date,
+        meals: day.meals.map(meal => ({
+          id: meal.id,
+          type: meal.type,
+          name: meal.name,
+          recipeId: meal.recipeId,
+          mealType: meal.mealType,
+          menuItems: meal.menuItems || []
         }))
       }))
     };

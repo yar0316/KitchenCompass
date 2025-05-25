@@ -13,11 +13,8 @@ const DashboardPage: React.FC = () => {
         <DashboardIcon sx={{ mr: 1, fontSize: 30 }} />
         <Typography variant="h5" component="h1">
           ダッシュボード
-        </Typography>
-      </Box>
-      
-      <Grid container spacing={3}>
-        <Grid item xs={12}>
+        </Typography>      </Box>      <Grid container spacing={3}>
+        <Grid size={12}>
           <Paper 
             elevation={2}
             sx={{ 

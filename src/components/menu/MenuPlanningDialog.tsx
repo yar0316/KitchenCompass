@@ -37,6 +37,16 @@ import { Schema } from '../../amplify/data/resource';
 
 const client = generateClient<Schema>();
 
+// 献立データの型定義
+interface MealData {
+  name?: string;
+  menuItems?: MenuItem[];
+  isOuting?: boolean;
+  restaurantName?: string;
+  notes?: string;
+  recipeId?: string;
+}
+
 interface MenuItem {
   id: string;
   name: string;
@@ -46,10 +56,10 @@ interface MenuItem {
 interface MenuPlanningDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (mealData: any) => void;
+  onSave: (mealData: MealData) => void;
   date: Date | null;
   mealType: 'breakfast' | 'lunch' | 'dinner' | null;
-  editingMeal: any | null;
+  editingMeal: MealData | null;
 }
 
 interface OutingInfo {
@@ -73,11 +83,11 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [tempItemName, setTempItemName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const [selectedRecipe, setSelectedRecipe] = useState<any | null>(null);
+  // TODO: 将来的にレシピ選択機能を実装時に有効化
+  // const [selectedRecipe, setSelectedRecipe] = useState<Schema['Recipe']['type'] | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [allRecipes, setAllRecipes] = useState<any[]>([]);
-  const [filteredRecipes, setFilteredRecipes] = useState<any[]>([]);
+  const [allRecipes, setAllRecipes] = useState<Schema['Recipe']['type'][]>([]);
+  const [filteredRecipes, setFilteredRecipes] = useState<Schema['Recipe']['type'][]>([]);
   const [loadingRecipes, setLoadingRecipes] = useState(false);
 
   const [generatingRecipe, setGeneratingRecipe] = useState(false);
@@ -93,11 +103,9 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
       id: `menu-${Date.now()}`,
       name: '',
       recipeId: null
-    };
-
-    setMenuItems([...menuItems, newItem]);
+    };    setMenuItems([...menuItems, newItem]);
     setCurrentEditingItem(newItem);
-    setSelectedRecipe(null);
+    // setSelectedRecipe(null);
 
     setEditingItemId(newItem.id);
     setTempItemName('');
@@ -118,10 +126,8 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
     };
 
     const updatedItems = [...menuItems, newItem];
-    setMenuItems(updatedItems);
-
-    setCurrentEditingItem(newItem);
-    setSelectedRecipe(recipe);
+    setMenuItems(updatedItems);    setCurrentEditingItem(newItem);
+    // setSelectedRecipe(recipe);
   };
 
   const handleDeleteMenuItem = (itemId: string) => {
@@ -130,33 +136,36 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
     }
 
     const updatedItems = menuItems.filter(item => item.id !== itemId);
-    setMenuItems(updatedItems);
-
-    if (currentEditingItem && currentEditingItem.id === itemId) {
+    setMenuItems(updatedItems);    if (currentEditingItem && currentEditingItem.id === itemId) {
       setCurrentEditingItem(updatedItems[0] || null);
 
+      // TODO: 将来的にレシピ選択機能を実装時に有効化
+      /*
       if (updatedItems[0]) {
         const recipe = updatedItems[0].recipeId
           ? allRecipes.find(r => r.id === updatedItems[0].recipeId) || null
           : null;
         setSelectedRecipe(recipe);
       }
+      */
     }
 
     if (editingItemId === itemId) {
       setEditingItemId(null);
     }
   };
-
   const handleSelectMenuItem = (item: MenuItem) => {
     setCurrentEditingItem(item);
-
+    
+    // TODO: 将来的にレシピ選択機能を実装時に有効化
+    /*
     if (item.recipeId) {
       const recipe = allRecipes.find(r => r.id === item.recipeId);
       setSelectedRecipe(recipe || null);
     } else {
       setSelectedRecipe(null);
     }
+    */
   };
 
   const handleStartEditing = (item: MenuItem) => {
@@ -226,7 +235,8 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
       setGeneratingRecipe(false);
     }, 2000);
   };
-
+  // TODO: 将来的にレシピとメニューアイテムの関連付け機能を実装時に有効化
+  /*
   const handleUpdateMenuItemRecipe = (recipe: { id: string; name: string } | null) => {
     if (!currentEditingItem || !recipe) return;
 
@@ -243,6 +253,7 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
 
     setMenuItems(updatedItems);
   };
+  */
 
   useEffect(() => {
     if (open) {
@@ -270,10 +281,11 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
 
   useEffect(() => {
     if (open && editingMeal) {
-      if (editingMeal.menuItems && Array.isArray(editingMeal.menuItems) && editingMeal.menuItems.length > 0) {
-        setMenuItems(editingMeal.menuItems);
+      if (editingMeal.menuItems && Array.isArray(editingMeal.menuItems) && editingMeal.menuItems.length > 0) {        setMenuItems(editingMeal.menuItems);
         setCurrentEditingItem(editingMeal.menuItems[0]);
-
+        
+        // TODO: 将来的にレシピ選択機能を実装時に有効化
+        /*
         const firstItem = editingMeal.menuItems[0];
         if (firstItem.recipeId) {
           const recipe = allRecipes.find(r => r.id === firstItem.recipeId);
@@ -281,21 +293,24 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
         } else {
           setSelectedRecipe(null);
         }
+        */
       } else {
         const initialItem = {
           id: `menu-${Date.now()}`,
           name: editingMeal.name || '',
           recipeId: editingMeal.recipeId || null
-        };
-        setMenuItems([initialItem]);
+        };        setMenuItems([initialItem]);
         setCurrentEditingItem(initialItem);
-
+        
+        // TODO: 将来的にレシピ選択機能を実装時に有効化
+        /*
         if (editingMeal.recipeId) {
           const recipe = allRecipes.find(r => r.id === editingMeal.recipeId);
           setSelectedRecipe(recipe || null);
         } else {
           setSelectedRecipe(null);
         }
+        */
       }
 
       if (editingMeal.isOuting) {
@@ -311,11 +326,11 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
           notes: ''
         });
       }
-    } else {
-      const initialItem = { id: `menu-${Date.now()}`, name: '', recipeId: null };
+    } else {      const initialItem = { id: `menu-${Date.now()}`, name: '', recipeId: null };
       setMenuItems([initialItem]);
       setCurrentEditingItem(initialItem);
-      setSelectedRecipe(null);
+      // TODO: 将来的にレシピ選択機能を実装時に有効化
+      // setSelectedRecipe(null);
       setOutingInfo({
         isOuting: false,
         restaurantName: '',
@@ -460,17 +475,16 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
                 borderColor: 'divider',
                 borderRadius: 1
               }}
-            >
-              {menuItems.map((item) => (
+            >              {menuItems.map((item) => (
                 <ListItem
                   key={item.id}
-                  button={editingItemId !== item.id}
-                  selected={currentEditingItem?.id === item.id}
                   onClick={() => editingItemId !== item.id && handleSelectMenuItem(item)}
                   sx={{
                     borderBottom: menuItems.indexOf(item) < menuItems.length - 1 ? '1px solid' : 'none',
                     borderBottomColor: 'divider',
-                    py: 1
+                    py: 1,
+                    cursor: editingItemId !== item.id ? 'pointer' : 'default',
+                    backgroundColor: currentEditingItem?.id === item.id ? 'action.selected' : 'transparent'
                   }}
                 >
                   {editingItemId === item.id ? (

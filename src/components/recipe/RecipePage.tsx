@@ -4,19 +4,18 @@ import {
   Typography, 
   Box, 
   Button, 
-  Grid,
   TextField,
   InputAdornment,
   MenuItem,
   FormControl,
   Select,
   InputLabel,
-  Divider,
   Pagination,
   SelectChangeEvent,
   Alert,
   CircularProgress
 } from '@mui/material';
+import { Grid } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import SortIcon from '@mui/icons-material/Sort';
@@ -79,14 +78,12 @@ const RecipePage: React.FC = () => {
     setLoading(true);
     setError(null);
     
-    try {
-      // Amplify V6でのGraphQLクエリ呼び出し
-      const response: any = await client.graphql({
+    try {      // Amplify V6でのGraphQLクエリ呼び出し
+      const response = await client.graphql({
         query: listRecipes
       });
-      
-      // DynamoDBから取得したレシピデータ
-      const recipeData = response.data.listRecipes.items;
+        // DynamoDBから取得したレシピデータ
+      const recipeData = (response.data as unknown as { listRecipes: { items: Recipe[] } })?.listRecipes?.items || [];
       
       // 各レシピのJSONデータをパース
       const processedRecipes = recipeData.map((recipe: Recipe) => {
@@ -201,9 +198,8 @@ const RecipePage: React.FC = () => {
         return recipesToSort;
     }
   };
-  
-  // 新しいレシピの追加
-  const handleAddRecipe = async (newRecipe: any) => {
+    // 新しいレシピの追加
+  const handleAddRecipe = async (newRecipe: Recipe) => {
     try {
       // 材料と手順をJSON文字列に変換
       const ingredientsJson = JSON.stringify(newRecipe.ingredients || []);
@@ -226,15 +222,13 @@ const RecipePage: React.FC = () => {
         instructionsJson: instructionsJson,
         createdBy: 'user', // 実際のユーザーIDに変更する必要があります
         favorite: false
-      };
-      
-      // Amplify V6でのGraphQLミューテーション呼び出し
-      const result: any = await client.graphql({
+      };      // Amplify V6でのGraphQLミューテーション呼び出し
+      const result = await client.graphql({
         query: createRecipe,
         variables: { input: createInput }
       });
       
-      const createdRecipe = result.data.createRecipe;
+      const createdRecipe = (result.data as unknown as { createRecipe: Recipe })?.createRecipe;
       
       // 新しく作成されたレシピを表示用に変換
       const processedRecipe = {
@@ -253,9 +247,8 @@ const RecipePage: React.FC = () => {
       alert('レシピの保存中にエラーが発生しました。');
     }
   };
-  
-  // レシピの更新
-  const handleUpdateRecipe = async (updatedRecipe: any) => {
+    // レシピの更新
+  const handleUpdateRecipe = async (updatedRecipe: Recipe) => {
     try {
       // 材料と手順をJSON文字列に変換
       const ingredientsJson = JSON.stringify(updatedRecipe.ingredients || []);
@@ -278,14 +271,13 @@ const RecipePage: React.FC = () => {
         ingredientsJson: ingredientsJson,
         instructionsJson: instructionsJson
       };
-      
-      // Amplify V6でのGraphQLミューテーション呼び出し
-      const result: any = await client.graphql({
+        // Amplify V6でのGraphQLミューテーション呼び出し
+      const result = await client.graphql({
         query: updateRecipe,
         variables: { input: updateInput }
       });
       
-      const updatedRecipeResult = result.data.updateRecipe;
+      const updatedRecipeResult = (result.data as unknown as { updateRecipe: Recipe })?.updateRecipe;
       
       // 更新されたレシピを表示用に変換
       const processedRecipe = {

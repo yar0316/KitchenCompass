@@ -6,7 +6,6 @@ import {
   Button, 
   Paper,
   Divider,
-  IconButton,
   useTheme,
   useMediaQuery,
   Collapse,
@@ -20,9 +19,7 @@ import ShoppingListItem from './ShoppingListItem';
 import NewShoppingListDialog from './NewShoppingListDialog';
 import ShoppingListDetails from './ShoppingListDetails';
 import { generateClient } from 'aws-amplify/api';
-import { Schema } from '../../amplify/data/resource';
-import * as mutations from '../../graphql/mutations';
-import * as queries from '../../graphql/queries';
+import { Schema } from '../../../amplify/data/resource';
 import { type ShoppingList } from '../../API';
 
 // Amplify APIクライアントを生成
@@ -72,9 +69,8 @@ const ShoppingListPage: React.FC = () => {
       setSelectedList(sortedLists[0].id);
     }
   }, [shoppingLists, selectedList]);
-  
-  // 新しい買い物リストの追加
-  const handleAddShoppingList = async (newList: any) => {
+    // 新しい買い物リストの追加
+  const handleAddShoppingList = async (newList: { name: string; description?: string; dueDate?: string }) => {
     try {
       // APIを使用して新しいShoppingListを作成
       const result = await client.models.ShoppingList.create({

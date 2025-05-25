@@ -8,7 +8,7 @@ import { dateUtils } from './dateUtils';
 /**
  * APIレスポンスからDayData配列へ変換
  */
-export const convertMenusToDays = (menusArr: any[], weekStart: Date): DayData[] => {
+export const convertMenusToDays = (menusArr: unknown[], weekStart: Date): DayData[] => {
   const days: DayData[] = [];
   const mealTypes: MealData['type'][] = ['breakfast', 'lunch', 'dinner'];
   
@@ -18,38 +18,62 @@ export const convertMenusToDays = (menusArr: any[], weekStart: Date): DayData[] 
     const dateYMD = dateUtils.toYMDString(date);
     
     // 対応するMenuを検索
-    const menu = menusArr.find((m: any) => {
+    const menu = menusArr.find((m: unknown) => {
       // APIから取得した日付をYYYY-MM-DD形式に正規化して比較
-      const menuDateYMD = dateUtils.toYMDString(new Date(m.date));
+      const menuItem = m as { date?: string };
+      if (!menuItem.date) return false;
+      const menuDateYMD = dateUtils.toYMDString(new Date(menuItem.date));
       return menuDateYMD === dateYMD;
     });
     
     // menuItemsデータを取得（APIレスポンスの構造に対応）
-    const menuItems = menu && menu.menuItems && menu.menuItems.items ? menu.menuItems.items : [];
+    const menuObject = menu as { menuItems?: { items?: unknown[] } } | undefined;
+    const menuItems = menuObject?.menuItems?.items ?? [];
     
     const meals: MealData[] = mealTypes.map(type => {
-      const item = menuItems.find((mi: any) => mi.mealType === type);
+      const item = menuItems.find((mi: unknown) => {
+        const menuItem = mi as { mealType?: string };
+        return menuItem.mealType === type;
+      });
       
-      return item ? {
-        id: item.id,
+      const menuItem = item as {
+        id?: string;
+        name?: string;
+        recipeId?: string;
+        isOutside?: boolean;
+        outsideLocation?: string;
+        notes?: string;
+      } | undefined;
+        return menuItem ? {
+        id: menuItem.id || `empty-${date.toISOString()}-${type}`,
         type: type,
-        name: item.name || '',
-        recipeId: item.recipeId || null,
-        isOuting: item.isOutside || false,
-        restaurantName: item.outsideLocation || '',
-        notes: item.notes || ''
+        mealType: type,
+        name: menuItem.name || '',
+        recipeId: menuItem.recipeId || null,
+        menuItems: [], // 空配列で初期化
+        isOuting: menuItem.isOutside || false,
+        isOutside: menuItem.isOutside || false,
+        restaurantName: menuItem.outsideLocation || '',
+        outsideLocation: menuItem.outsideLocation || ''
       } : {
         id: `empty-${date.toISOString()}-${type}`,
         type: type,
+        mealType: type,
         name: '',
         recipeId: null,
+        menuItems: [], // 空配列で初期化
         isOuting: false,
+        isOutside: false,
         restaurantName: '',
-        notes: ''
+        outsideLocation: ''
       };
     });
     
-    days.push({ date, meals });
+    days.push({ 
+      id: `day-${dateYMD}`,
+      date, 
+      meals 
+    });
   }
   
   return days;
@@ -61,11 +85,6 @@ export const convertMenusToDays = (menusArr: any[], weekStart: Date): DayData[] 
 export const convertMealToMenuItem = (meal: MealData): MenuItemData => {
   return {
     id: meal.id,
-    mealType: meal.type,
-    isOutside: meal.isOuting || false,
-    outsideLocation: meal.restaurantName || '',
-    notes: meal.notes || '',
-    menuId: '', // この値は使用されません
     name: meal.name,
     recipeId: meal.recipeId || undefined
   };
@@ -78,17 +97,42 @@ export const generatePreviousWeekDays = (currentWeekFirstDay: Date): DayData[] =
   const previousFirstDay = new Date(currentWeekFirstDay);
   previousFirstDay.setDate(currentWeekFirstDay.getDate() - 7);
   const previousWeekStart = dateUtils.getStartOfWeek(previousFirstDay);
-  
-  // 前の週のデータを生成
+    // 前の週のデータを生成
   return Array(7).fill(null).map((_, index) => {
     const date = new Date(previousWeekStart);
     date.setDate(previousWeekStart.getDate() + index);
+    const dateYMD = dateUtils.toYMDString(date);
     return {
+      id: `prev-day-${dateYMD}`,
       date,
       meals: [
-        { id: `prev-b${index+1}-${Date.now()}`, type: 'breakfast' as const, isOuting: false, recipeId: null, name: '' },
-        { id: `prev-l${index+1}-${Date.now()}`, type: 'lunch' as const, isOuting: false, recipeId: null, name: '' },
-        { id: `prev-d${index+1}-${Date.now()}`, type: 'dinner' as const, isOuting: false, recipeId: null, name: '' }
+        { 
+          id: `prev-b${index+1}-${Date.now()}`, 
+          type: 'breakfast' as const, 
+          mealType: 'breakfast' as const,
+          name: '',
+          menuItems: [],
+          isOuting: false, 
+          recipeId: null
+        },
+        { 
+          id: `prev-l${index+1}-${Date.now()}`, 
+          type: 'lunch' as const, 
+          mealType: 'lunch' as const,
+          name: '',
+          menuItems: [],
+          isOuting: false, 
+          recipeId: null
+        },
+        { 
+          id: `prev-d${index+1}-${Date.now()}`, 
+          type: 'dinner' as const, 
+          mealType: 'dinner' as const,
+          name: '',
+          menuItems: [],
+          isOuting: false, 
+          recipeId: null
+        }
       ]
     };
   });
@@ -101,17 +145,42 @@ export const generateNextWeekDays = (currentWeekLastDay: Date): DayData[] => {
   const nextFirstDay = new Date(currentWeekLastDay);
   nextFirstDay.setDate(currentWeekLastDay.getDate() + 1);
   const nextWeekStart = dateUtils.getStartOfWeek(nextFirstDay);
-  
-  // 新しい次の週のデータを生成
+    // 新しい次の週のデータを生成
   return Array(7).fill(null).map((_, index) => {
     const date = new Date(nextWeekStart);
     date.setDate(nextWeekStart.getDate() + index);
+    const dateYMD = dateUtils.toYMDString(date);
     return {
+      id: `next-day-${dateYMD}`,
       date,
       meals: [
-        { id: `new-b${index+1}-${Date.now()}`, type: 'breakfast' as const, isOuting: false, recipeId: null, name: '' },
-        { id: `new-l${index+1}-${Date.now()}`, type: 'lunch' as const, isOuting: false, recipeId: null, name: '' },
-        { id: `new-d${index+1}-${Date.now()}`, type: 'dinner' as const, isOuting: false, recipeId: null, name: '' }
+        { 
+          id: `new-b${index+1}-${Date.now()}`, 
+          type: 'breakfast' as const, 
+          mealType: 'breakfast' as const,
+          name: '',
+          menuItems: [],
+          isOuting: false, 
+          recipeId: null
+        },
+        { 
+          id: `new-l${index+1}-${Date.now()}`, 
+          type: 'lunch' as const, 
+          mealType: 'lunch' as const,
+          name: '',
+          menuItems: [],
+          isOuting: false, 
+          recipeId: null
+        },
+        { 
+          id: `new-d${index+1}-${Date.now()}`, 
+          type: 'dinner' as const, 
+          mealType: 'dinner' as const,
+          name: '',
+          menuItems: [],
+          isOuting: false, 
+          recipeId: null
+        }
       ]
     };
   });

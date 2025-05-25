@@ -16,10 +16,19 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
+// レシピデータの型定義
+interface Recipe {
+  name: string;
+  description?: string;
+  cookingTime: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  tags: string[];
+}
+
 interface NewRecipeDialogProps {
   open: boolean;
   onClose: () => void;
-  onSave: (recipe: any) => void;
+  onSave: (recipe: Recipe) => void;
 }
 
 // 難易度の選択肢

@@ -12,9 +12,7 @@ import {
   ListItemText,
   ListItemIcon,
   Chip,
-  FormControlLabel,
   MenuItem,
-  InputAdornment,
   Paper,
   LinearProgress,
   Collapse,
@@ -72,9 +70,8 @@ const ShoppingListDetails: React.FC<ShoppingListDetailsProps> = ({ list, onUpdat
   // 新しい状態: 折りたたみ管理用
   const [isDetailsExpanded, setIsDetailsExpanded] = useState(false);
   const [isAddItemExpanded, setIsAddItemExpanded] = useState(false);
-  
-  // 買い物アイテムの取得
-  const fetchShoppingItems = async () => {
+    // 買い物アイテムの取得
+  const fetchShoppingItems = React.useCallback(async () => {
     if (!id) return;
     
     setLoading(true);
@@ -95,16 +92,15 @@ const ShoppingListDetails: React.FC<ShoppingListDetailsProps> = ({ list, onUpdat
     } finally {
       setLoading(false);
     }
-  };
-  
-  // リストIDが変更されたらアイテムを再取得
+  }, [id]);
+    // リストIDが変更されたらアイテムを再取得
   useEffect(() => {
     fetchShoppingItems();
     
     // リスト情報も更新
     setEditName(name);
     setEditDescription(description || '');
-  }, [id, name, description]);
+  }, [id, name, description, fetchShoppingItems]);
 
   // 日付のフォーマット
   const formattedDate = dueDate 
@@ -114,8 +110,7 @@ const ShoppingListDetails: React.FC<ShoppingListDetailsProps> = ({ list, onUpdat
   // 進捗の計算
   const completedItems = items.filter(item => item.isChecked).length;
   const progress = items.length > 0 ? (completedItems / items.length) * 100 : 0;
-  
-  // 新しいアイテムを追加
+    // 新しいアイテムを追加
   const handleAddItem = async () => {
     if (!newItemName.trim() || !id) return;
     
@@ -130,9 +125,8 @@ const ShoppingListDetails: React.FC<ShoppingListDetailsProps> = ({ list, onUpdat
         notes: newItemNotes.trim() || undefined,
         shoppingListId: id
       });
-      
-      if (result.data) {
-        setItems([...items, result.data]);
+        if (result.data && typeof result.data === 'object' && 'id' in result.data) {
+        setItems([...items, result.data as unknown as ShoppingItem]);
       }
       
       setNewItemName('');
@@ -146,18 +140,16 @@ const ShoppingListDetails: React.FC<ShoppingListDetailsProps> = ({ list, onUpdat
       setSaveLoading(false);
     }
   };
-  
-  // アイテムのチェック状態を切り替え
+    // アイテムのチェック状態を切り替え
   const toggleItemCheck = async (item: ShoppingItem) => {
     try {
       const result = await client.models.ShoppingItem.update({
         id: item.id,
         isChecked: !item.isChecked
       });
-      
-      if (result.data) {
+        if (result.data && typeof result.data === 'object' && 'id' in result.data) {
         setItems(items.map(i => 
-          i.id === item.id ? result.data : i
+          i.id === item.id ? result.data as unknown as ShoppingItem : i
         ));
       }
       
@@ -199,14 +191,13 @@ const ShoppingListDetails: React.FC<ShoppingListDetailsProps> = ({ list, onUpdat
       setError('アイテムの削除に失敗しました。');
     }
   };
-  
-  // 編集モードの切り替え
+    // 編集モードの切り替え
   const toggleEditMode = async () => {
     if (isEditing) {
       // 編集内容を保存
       try {
         setSaveLoading(true);
-        const result = await client.models.ShoppingList.update({
+        await client.models.ShoppingList.update({
           id,
           name: editName.trim(),
           description: editDescription.trim() || undefined
