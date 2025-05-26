@@ -33,7 +33,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import { generateClient } from 'aws-amplify/api';
-import { Schema } from '../../amplify/data/resource';
+import { Schema } from '../../../amplify/data/resource';
 
 const client = generateClient<Schema>();
 

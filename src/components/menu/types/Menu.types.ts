@@ -17,6 +17,10 @@ export interface MenuItemData {
   id: string;
   name: string;
   recipeId?: string | null;
+  mealType: 'breakfast' | 'lunch' | 'dinner';
+  isOutside?: boolean;
+  outsideLocation?: string;
+  notes?: string;
   category?: string;
   description?: string;
   calories?: number;

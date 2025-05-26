@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { generateClient } from 'aws-amplify/api';
 import { 
   MenuPlans, 
   MealData, 
@@ -7,6 +8,48 @@ import {
   Template
 } from '../types/Menu.types';
 import { dateUtils } from '../utils/dateUtils';
+import { 
+  listMenus
+} from '../../../graphql/queries';
+import { 
+  createMenu, 
+  createMenuItem
+} from '../../../graphql/mutations';
+
+// GraphQL レスポンス型定義
+interface GraphQLMenuItem {
+  id: string;
+  name: string;
+  mealType: string;
+  isOutside?: boolean;
+  outsideLocation?: string;
+  notes?: string;
+  menuId: string;
+  recipeId?: string;
+  recipe?: {
+    id: string;
+    name: string;
+    description?: string;
+    imageUrl?: string;
+    cookingTime?: number;
+    category?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface GraphQLMenu {
+  id: string;
+  date: string;
+  notes?: string;
+  owner?: string;
+  menuItems: {
+    items: GraphQLMenuItem[];
+    nextToken?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
 
 /**
  * 空の初期値を定義
@@ -32,69 +75,139 @@ export const useMenuData = () => {
   const [menuPlans, setMenuPlans] = useState<MenuPlans>(INITIAL_MENU_PLANS);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const [templates, setTemplates] = useState<Template[]>([]);
-
-  /**
-   * モックデータを使用してMenuデータを取得
+  const [templates, setTemplates] = useState<Template[]>([]);  /**
+   * GraphQLを使用してMenuデータを取得
    */
   const fetchMenus = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log('[fetchMenus] 開始: メニューデータを取得します');
+      console.log('[fetchMenus] 開始: GraphQLでメニューデータを取得します');
       
-      // モックデータを返す
+      const client = generateClient();
+        // 現在の週の開始日と終了日を計算
       const currentWeekStart = dateUtils.getStartOfWeek(new Date());
       const nextWeekStart = dateUtils.addWeek(currentWeekStart);
       const previousWeekStart = dateUtils.subtractWeek(currentWeekStart);
-
-      const createEmptyWeek = (startDate: Date, id: string): WeekData => ({
-        id,
-        startDate,
-        days: dateUtils.generateWeekDays(startDate).map(date => ({
-          id: `${id}-${date.toISOString().split('T')[0]}`,
-          date,
-          meals: [
-            {
-              id: `${date.toISOString()}-breakfast`,
-              type: 'breakfast',
-              name: '',
-              recipeId: null,
-              menuItems: [],
-              mealType: 'breakfast'
-            },
-            {
-              id: `${date.toISOString()}-lunch`,
-              type: 'lunch',
-              name: '',
-              recipeId: null,
-              menuItems: [],
-              mealType: 'lunch'
-            },
-            {
-              id: `${date.toISOString()}-dinner`,
-              type: 'dinner',
-              name: '',
-              recipeId: null,
-              menuItems: [],
-              mealType: 'dinner'
+      // 各週の終了日を計算
+      const nextWeekEnd = dateUtils.addDays(nextWeekStart, 6);
+      
+      // UTC時間で日付範囲を作成
+      const startDateUTC = new Date(Date.UTC(previousWeekStart.getFullYear(), previousWeekStart.getMonth(), previousWeekStart.getDate(), 0, 0, 0, 0));
+      const endDateUTC = new Date(Date.UTC(nextWeekEnd.getFullYear(), nextWeekEnd.getMonth(), nextWeekEnd.getDate(), 23, 59, 59, 999));
+      
+      // 全てのメニューを取得（日付範囲でフィルタリング）
+      const menuResponse = await client.graphql({
+        query: listMenus,
+        variables: {
+          filter: {
+            date: {
+              between: [
+                startDateUTC.toISOString(),
+                endDateUTC.toISOString()
+              ]
             }
-          ]
-        }))
-      });
+          }
+        }
+      }) as { data: { listMenus: { items: GraphQLMenu[] } } };
+
+      const menus: GraphQLMenu[] = menuResponse.data.listMenus.items;
+      console.log('[fetchMenus] 取得したメニュー数:', menus.length);
+
+      // 取得したメニューを週ごとに分類
+      const createWeekData = (startDate: Date, id: string): WeekData => {
+        const weekDays = dateUtils.generateWeekDays(startDate);
+        
+        return {
+          id,
+          startDate,          days: weekDays.map(date => {
+            const dateStr = date.toISOString().split('T')[0];
+            const dayMenu = menus.find((menu: GraphQLMenu) => {
+              // DynamoDBから取得したAWSDateTime形式と比較するため、日付部分のみを比較
+              const menuDateStr = menu.date.split('T')[0];
+              return menuDateStr === dateStr;
+            });
+            
+            const dayData: DayData = {
+              id: `${id}-${dateStr}`,
+              date,
+              meals: []
+            };
+
+            if (dayMenu && dayMenu.menuItems && dayMenu.menuItems.items) {
+              // 食事タイプごとにメニューアイテムを整理
+              const mealTypes = ['breakfast', 'lunch', 'dinner'];
+              
+              mealTypes.forEach(mealType => {                const mealItems = dayMenu.menuItems.items.filter(
+                  (item: GraphQLMenuItem) => item.mealType === mealType
+                );
+                
+                if (mealItems.length > 0) {
+                  // 複数のアイテムがある場合は最初のものを使用
+                  const primaryItem = mealItems[0];
+                  const meal: MealData = {
+                    id: primaryItem.id,
+                    type: mealType as 'breakfast' | 'lunch' | 'dinner',
+                    name: primaryItem.name || '',
+                    recipeId: primaryItem.recipeId || null,
+                    menuItems: mealItems.map((item: GraphQLMenuItem) => ({
+                      id: item.id,
+                      name: item.name || '',
+                      recipeId: item.recipeId || null,
+                      mealType: item.mealType as 'breakfast' | 'lunch' | 'dinner',
+                      isOutside: item.isOutside || false,
+                      outsideLocation: item.outsideLocation || '',
+                      notes: item.notes || ''
+                    })),
+                    mealType: mealType as 'breakfast' | 'lunch' | 'dinner'
+                  };
+                  dayData.meals.push(meal);
+                } else {
+                  // 空の食事を追加
+                  const meal: MealData = {
+                    id: `${dateStr}-${mealType}`,
+                    type: mealType as 'breakfast' | 'lunch' | 'dinner',
+                    name: '',
+                    recipeId: null,
+                    menuItems: [],
+                    mealType: mealType as 'breakfast' | 'lunch' | 'dinner'
+                  };
+                  dayData.meals.push(meal);
+                }
+              });
+            } else {
+              // メニューがない日は空の食事を作成
+              const mealTypes = ['breakfast', 'lunch', 'dinner'];
+              mealTypes.forEach(mealType => {
+                const meal: MealData = {
+                  id: `${dateStr}-${mealType}`,
+                  type: mealType as 'breakfast' | 'lunch' | 'dinner',
+                  name: '',
+                  recipeId: null,
+                  menuItems: [],
+                  mealType: mealType as 'breakfast' | 'lunch' | 'dinner'
+                };
+                dayData.meals.push(meal);
+              });
+            }
+            
+            return dayData;
+          })
+        };
+      };
 
       const updatedMenuPlans = {
-        currentWeek: createEmptyWeek(currentWeekStart, 'current-week'),
-        nextWeek: createEmptyWeek(nextWeekStart, 'next-week'),
-        previousWeek: createEmptyWeek(previousWeekStart, 'previous-week')
+        previousWeek: createWeekData(previousWeekStart, 'previous-week'),
+        currentWeek: createWeekData(currentWeekStart, 'current-week'),
+        nextWeek: createWeekData(nextWeekStart, 'next-week')
       };
 
       setMenuPlans(updatedMenuPlans);
-      console.log('[fetchMenus] モックメニュープラン更新完了');
+      console.log('[fetchMenus] GraphQLメニュープラン更新完了');
       
     } catch (e) {
-      console.error('[fetchMenus] Error:', e);
+      console.error('[fetchMenus] GraphQL Error:', e);
       setError(e as Error);
     } finally {
       setLoading(false);
@@ -106,16 +219,73 @@ export const useMenuData = () => {
    */
   useEffect(() => {
     fetchMenus();
-  }, [fetchMenus]);
-
-  /**
-   * 献立保存処理（モック）
-   */
-  const handleSaveMeal = async (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner', mealData: MealData) => {
-    try {
-      console.log('[handleSaveMeal] mealData:', mealData);
+  }, [fetchMenus]);  /**
+   * 献立保存処理（GraphQL）
+   */  const handleSaveMeal = async (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner', mealData: MealData) => {
+    try {      console.log('[handleSaveMeal] GraphQLでmealDataを保存:', mealData);
+      console.log('[handleSaveMeal] 元の日付:', date);
+        const client = generateClient();
+      // DynamoDBのAWSDateTime形式に対応：UTC時間で指定日の午前0時に設定
+      const targetDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0));
+      const dateTimeStr = targetDate.toISOString();
       
-      // ローカル状態を更新
+      console.log('[handleSaveMeal] UTC変換後の日付:', dateTimeStr);
+      
+      // まず対象日のMenuが存在するかチェック（日付の開始と終了時刻で範囲検索）
+      const startOfDay = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0));
+      const endOfDay = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999));
+      
+      const existingMenuResponse = await client.graphql({
+        query: listMenus,
+        variables: {
+          filter: {
+            date: {
+              between: [startOfDay.toISOString(), endOfDay.toISOString()]
+            }
+          }
+        }
+      }) as { data: { listMenus: { items: GraphQLMenu[] } } };
+      
+      let menuId: string;
+      
+      if (existingMenuResponse.data.listMenus.items.length > 0) {
+        // 既存のMenuを使用
+        menuId = existingMenuResponse.data.listMenus.items[0].id;
+      } else {
+        // 新しいMenuを作成（AWSDateTime形式で送信）
+        const newMenuResponse = await client.graphql({
+          query: createMenu,
+          variables: {
+            input: {
+              date: dateTimeStr
+            }
+          }
+        }) as { data: { createMenu: GraphQLMenu } };
+        
+        menuId = newMenuResponse.data.createMenu.id;
+      }
+      
+      // MenuItemを作成または更新
+      if (mealData.menuItems && mealData.menuItems.length > 0) {
+        const menuItem = mealData.menuItems[0];
+        
+        await client.graphql({
+          query: createMenuItem,
+          variables: {
+            input: {
+              name: menuItem.name,
+              mealType: mealType,
+              menuId: menuId,
+              recipeId: menuItem.recipeId,
+              isOutside: menuItem.isOutside || false,
+              outsideLocation: menuItem.outsideLocation || '',
+              notes: menuItem.notes || ''
+            }
+          }
+        });
+      }
+      
+      // ローカル状態も更新
       const updatedMenuPlans = { ...menuPlans };
       
       // 該当する週を特定
@@ -152,11 +322,17 @@ export const useMenuData = () => {
           }
         }
       }
-      
-      setMenuPlans(updatedMenuPlans);
+        setMenuPlans(updatedMenuPlans);
+      console.log('[handleSaveMeal] 献立保存完了:', { date: dateTimeStr, mealType, menuId });
       return true;
     } catch (e) {
-      console.error('[handleSaveMeal] error:', e);
+      console.error('[handleSaveMeal] GraphQL error:', e);
+      console.error('[handleSaveMeal] Error details:', {
+        date: date.toISOString(),
+        mealType,
+        mealData,
+        error: e
+      });
       throw e;
     }
   };

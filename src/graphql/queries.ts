@@ -252,3 +252,275 @@ export const recipesByCategory = /* GraphQL */ `
     }
   }
 `;
+
+// Menu関連のクエリの追加
+export const getMenu = /* GraphQL */ `
+  query GetMenu($id: ID!) {
+    getMenu(id: $id) {
+      id
+      date
+      notes
+      owner
+      menuItems {
+        items {
+          id
+          name
+          mealType
+          isOutside
+          outsideLocation
+          notes
+          menuId
+          recipeId
+          recipe {
+            id
+            name
+            description
+            imageUrl
+            cookingTime: cookTime
+            category
+          }
+          createdAt
+          updatedAt
+        }
+        nextToken
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const listMenus = /* GraphQL */ `
+  query ListMenus(
+    $filter: ModelMenuFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listMenus(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        date
+        notes
+        owner
+        menuItems {
+          items {
+            id
+            name
+            mealType
+            isOutside
+            outsideLocation
+            notes
+            menuId
+            recipeId
+            recipe {
+              id
+              name
+              description
+              imageUrl
+              cookingTime: cookTime
+              category
+            }
+            createdAt
+            updatedAt
+          }
+          nextToken
+        }
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+export const menusByOwner = /* GraphQL */ `
+  query MenusByOwner(
+    $owner: String!
+    $sortDirection: ModelSortDirection
+    $filter: ModelMenuFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    menusByOwner(
+      owner: $owner
+      sortDirection: $sortDirection
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+    ) {
+      items {
+        id
+        date
+        notes
+        owner
+        menuItems {
+          items {
+            id
+            name
+            mealType
+            isOutside
+            outsideLocation
+            notes
+            menuId
+            recipeId
+            recipe {
+              id
+              name
+              description
+              imageUrl
+              cookingTime: cookTime
+              category
+            }
+            createdAt
+            updatedAt
+          }
+          nextToken
+        }
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+export const getMenuItem = /* GraphQL */ `
+  query GetMenuItem($id: ID!) {
+    getMenuItem(id: $id) {
+      id
+      name
+      mealType
+      isOutside
+      outsideLocation
+      notes
+      menuId
+      menu {
+        id
+        date
+        notes
+        owner
+        createdAt
+        updatedAt
+      }
+      recipeId
+      recipe {
+        id
+        name
+        description
+        imageUrl
+        cookingTime: cookTime
+        category
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const listMenuItems = /* GraphQL */ `
+  query ListMenuItems(
+    $filter: ModelMenuItemFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listMenuItems(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        name
+        mealType
+        isOutside
+        outsideLocation
+        notes
+        menuId
+        recipeId
+        recipe {
+          id
+          name
+          description
+          imageUrl
+          cookingTime: cookTime
+          category
+        }
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+export const menuItemsByMenuId = /* GraphQL */ `
+  query MenuItemsByMenuId(
+    $menuId: ID!
+    $sortDirection: ModelSortDirection
+    $filter: ModelMenuItemFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    menuItemsByMenuId(
+      menuId: $menuId
+      sortDirection: $sortDirection
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+    ) {
+      items {
+        id
+        name
+        mealType
+        isOutside
+        outsideLocation
+        notes
+        menuId
+        recipeId
+        recipe {
+          id
+          name
+          description
+          imageUrl
+          cookingTime: cookTime
+          category
+        }
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+// MenuTemplate関連のクエリ
+export const getMenuTemplate = /* GraphQL */ `
+  query GetMenuTemplate($id: ID!) {
+    getMenuTemplate(id: $id) {
+      id
+      name
+      description
+      owner
+      templateItemsJson
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const listMenuTemplates = /* GraphQL */ `
+  query ListMenuTemplates(
+    $filter: ModelMenuTemplateFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listMenuTemplates(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        name
+        description
+        owner
+        templateItemsJson
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;

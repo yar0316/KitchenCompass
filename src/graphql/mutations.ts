@@ -246,3 +246,226 @@ export const deleteRecipe = /* GraphQL */ `
     }
   }
 `;
+
+// Menu関連のミューテーションを追加
+export const createMenu = /* GraphQL */ `
+  mutation CreateMenu(
+    $input: CreateMenuInput!
+    $condition: ModelMenuConditionInput
+  ) {
+    createMenu(input: $input, condition: $condition) {
+      id
+      date
+      notes
+      owner
+      menuItems {
+        items {
+          id
+          name
+          mealType
+          isOutside
+          outsideLocation
+          notes
+          menuId
+          recipeId
+          createdAt
+          updatedAt
+        }
+        nextToken
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const updateMenu = /* GraphQL */ `
+  mutation UpdateMenu(
+    $input: UpdateMenuInput!
+    $condition: ModelMenuConditionInput
+  ) {
+    updateMenu(input: $input, condition: $condition) {
+      id
+      date
+      notes
+      owner
+      menuItems {
+        items {
+          id
+          name
+          mealType
+          isOutside
+          outsideLocation
+          notes
+          menuId
+          recipeId
+          createdAt
+          updatedAt
+        }
+        nextToken
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const deleteMenu = /* GraphQL */ `
+  mutation DeleteMenu(
+    $input: DeleteMenuInput!
+    $condition: ModelMenuConditionInput
+  ) {
+    deleteMenu(input: $input, condition: $condition) {
+      id
+      date
+      notes
+      owner
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const createMenuItem = /* GraphQL */ `
+  mutation CreateMenuItem(
+    $input: CreateMenuItemInput!
+    $condition: ModelMenuItemConditionInput
+  ) {
+    createMenuItem(input: $input, condition: $condition) {
+      id
+      name
+      mealType
+      isOutside
+      outsideLocation
+      notes
+      menuId
+      menu {
+        id
+        date
+        notes
+        owner
+        createdAt
+        updatedAt
+      }
+      recipeId
+      recipe {
+        id
+        name
+        description
+        imageUrl
+        cookingTime: cookTime
+        category
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const updateMenuItem = /* GraphQL */ `
+  mutation UpdateMenuItem(
+    $input: UpdateMenuItemInput!
+    $condition: ModelMenuItemConditionInput
+  ) {
+    updateMenuItem(input: $input, condition: $condition) {
+      id
+      name
+      mealType
+      isOutside
+      outsideLocation
+      notes
+      menuId
+      menu {
+        id
+        date
+        notes
+        owner
+        createdAt
+        updatedAt
+      }
+      recipeId
+      recipe {
+        id
+        name
+        description
+        imageUrl
+        cookingTime: cookTime
+        category
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const deleteMenuItem = /* GraphQL */ `
+  mutation DeleteMenuItem(
+    $input: DeleteMenuItemInput!
+    $condition: ModelMenuItemConditionInput
+  ) {
+    deleteMenuItem(input: $input, condition: $condition) {
+      id
+      name
+      mealType
+      isOutside
+      outsideLocation
+      notes
+      menuId
+      recipeId
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+// MenuTemplate関連のミューテーション
+export const createMenuTemplate = /* GraphQL */ `
+  mutation CreateMenuTemplate(
+    $input: CreateMenuTemplateInput!
+    $condition: ModelMenuTemplateConditionInput
+  ) {
+    createMenuTemplate(input: $input, condition: $condition) {
+      id
+      name
+      description
+      owner
+      templateItemsJson
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const updateMenuTemplate = /* GraphQL */ `
+  mutation UpdateMenuTemplate(
+    $input: UpdateMenuTemplateInput!
+    $condition: ModelMenuTemplateConditionInput
+  ) {
+    updateMenuTemplate(input: $input, condition: $condition) {
+      id
+      name
+      description
+      owner
+      templateItemsJson
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const deleteMenuTemplate = /* GraphQL */ `
+  mutation DeleteMenuTemplate(
+    $input: DeleteMenuTemplateInput!
+    $condition: ModelMenuTemplateConditionInput
+  ) {
+    deleteMenuTemplate(input: $input, condition: $condition) {
+      id
+      name
+      description
+      owner
+      templateItemsJson
+      createdAt
+      updatedAt
+    }
+  }
+`;
