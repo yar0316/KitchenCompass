@@ -44,11 +44,9 @@ import MenuPlanningDialog from './MenuPlanningDialog';
 import RecipeDetails from '../recipe/RecipeDetails';
 import { useMenuData } from './hooks/useMenuData';
 import { dateUtils } from './utils/dateUtils';
-import { menuUtils } from './utils/menuUtils';
 import { 
   ViewUnit, 
   MealData, 
-  MenuItemData, 
   SnackbarState, 
   Template
 } from './types/Menu.types';
@@ -297,20 +295,17 @@ const MenuPlanPage: React.FC = () => {
   const handleOpenDialog = (
     date: Date,
     mealType: 'breakfast' | 'lunch' | 'dinner',
-    existingMeal: MealData | null = null
-  ) => {
+    existingMeal: MealData | null = null  ) => {
     setSelectedDate(date);
     setSelectedMealType(mealType);
     
-    // MealDataからMenuItemDataに変換
-    let menuItemData: MenuItemData | null = null;
     if (existingMeal) {
-      menuItemData = menuUtils.convertMealToMenuItem(existingMeal);
+      // 既存の献立データがある場合はそれを編集対象とする
     }
     
-    setEditingMeal(menuItemData);
+    setEditingMeal(existingMeal);
     setIsDialogOpen(true);
-  };  // 献立保存処理のラッパー
+  };// 献立保存処理のラッパー
   const handleSaveMealWrapper = async (mealData: MealData) => {
     if (!selectedDate || !selectedMealType) return;
     

@@ -34,24 +34,12 @@ import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import { generateClient } from 'aws-amplify/api';
 import { Schema } from '../../../amplify/data/resource';
+import { MealData, MenuItemData } from './types/Menu.types';
 
 const client = generateClient<Schema>();
 
-// 献立データの型定義
-interface MealData {
-  name?: string;
-  menuItems?: MenuItem[];
-  isOuting?: boolean;
-  restaurantName?: string;
-  notes?: string;
-  recipeId?: string;
-}
-
-interface MenuItem {
-  id: string;
-  name: string;
-  recipeId: string | null;
-}
+// MenuItem は MenuItemData として統一
+type MenuItem = MenuItemData;
 
 interface MenuPlanningDialogProps {
   open: boolean;
@@ -75,9 +63,16 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
   date,
   mealType,
   editingMeal
-}) => {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([
-    { id: `menu-${Date.now()}`, name: '', recipeId: null }
+}) => {  const [menuItems, setMenuItems] = useState<MenuItem[]>([
+    { 
+      id: `menu-${Date.now()}`, 
+      name: '', 
+      recipeId: null,
+      mealType: 'breakfast',
+      isOutside: false,
+      outsideLocation: '',
+      notes: ''
+    }
   ]);
   const [currentEditingItem, setCurrentEditingItem] = useState<MenuItem | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -97,13 +92,17 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
     restaurantName: '',
     notes: ''
   });
-
   const handleAddMenuItem = () => {
     const newItem = {
       id: `menu-${Date.now()}`,
       name: '',
-      recipeId: null
-    };    setMenuItems([...menuItems, newItem]);
+      recipeId: null,
+      mealType: mealType || 'breakfast',
+      isOutside: false,
+      outsideLocation: '',
+      notes: ''
+    };
+    setMenuItems([...menuItems, newItem]);
     setCurrentEditingItem(newItem);
     // setSelectedRecipe(null);
 
@@ -115,18 +114,22 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
       }
     }, 100);
   };
-
   const handleAddMenuItemFromRecipe = (recipe: { id: string; name: string }) => {
     if (!recipe) return;
 
     const newItem = {
       id: `menu-${Date.now()}`,
       name: recipe.name,
-      recipeId: recipe.id
+      recipeId: recipe.id,
+      mealType: mealType || 'breakfast',
+      isOutside: false,
+      outsideLocation: '',
+      notes: ''
     };
 
     const updatedItems = [...menuItems, newItem];
-    setMenuItems(updatedItems);    setCurrentEditingItem(newItem);
+    setMenuItems(updatedItems);
+    setCurrentEditingItem(newItem);
     // setSelectedRecipe(recipe);
   };
 
@@ -294,12 +297,16 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
           setSelectedRecipe(null);
         }
         */
-      } else {
-        const initialItem = {
+      } else {        const initialItem = {
           id: `menu-${Date.now()}`,
           name: editingMeal.name || '',
-          recipeId: editingMeal.recipeId || null
-        };        setMenuItems([initialItem]);
+          recipeId: editingMeal.recipeId || null,
+          mealType: mealType || 'breakfast',
+          isOutside: false,
+          outsideLocation: '',
+          notes: ''
+        };
+        setMenuItems([initialItem]);
         setCurrentEditingItem(initialItem);
         
         // TODO: 将来的にレシピ選択機能を実装時に有効化
@@ -311,13 +318,11 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
           setSelectedRecipe(null);
         }
         */
-      }
-
-      if (editingMeal.isOuting) {
+      }      if (editingMeal.isOuting) {
         setOutingInfo({
           isOuting: true,
           restaurantName: editingMeal.restaurantName || '',
-          notes: editingMeal.notes || ''
+          notes: ''
         });
       } else {
         setOutingInfo({
@@ -325,8 +330,16 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
           restaurantName: '',
           notes: ''
         });
-      }
-    } else {      const initialItem = { id: `menu-${Date.now()}`, name: '', recipeId: null };
+      }} else {
+      const initialItem = { 
+        id: `menu-${Date.now()}`, 
+        name: '', 
+        recipeId: null,
+        mealType: mealType || 'breakfast',
+        isOutside: false,
+        outsideLocation: '',
+        notes: ''
+      };
       setMenuItems([initialItem]);
       setCurrentEditingItem(initialItem);
       // TODO: 将来的にレシピ選択機能を実装時に有効化
@@ -344,11 +357,9 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
           inputRef.current.focus();
         }
       }, 100);
-    }
-
-    setSearchQuery('');
+    }    setSearchQuery('');
     setFilteredRecipes(allRecipes);
-  }, [open, editingMeal, allRecipes]);
+  }, [open, editingMeal, allRecipes, mealType]);
 
   const handleSave = () => {
     if (editingItemId) {
@@ -358,14 +369,15 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
     const hasValidItems = menuItems.some(item => item.name.trim());
     if (!hasValidItems && !outingInfo.isOuting) return;
 
-    const validMenuItems = menuItems.filter(item => item.name.trim());
-
-    const mealData = {
+    const validMenuItems = menuItems.filter(item => item.name.trim());    const mealData = {
+      id: editingMeal?.id || `meal-${Date.now()}`,
       name: validMenuItems.length > 0 ? validMenuItems[0].name : '',
+      type: mealType || 'breakfast',
       menuItems: validMenuItems,
       isOuting: outingInfo.isOuting,
       restaurantName: outingInfo.isOuting ? outingInfo.restaurantName : '',
-      notes: outingInfo.isOuting ? outingInfo.notes : ''
+      notes: outingInfo.isOuting ? outingInfo.notes : '',
+      mealType: mealType || 'breakfast'
     };
 
     onSave(mealData);
@@ -611,9 +623,8 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
                       }}
                     >
                       <Box>
-                        <Typography variant="body1">{recipe.name}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          調理時間: {recipe.cookingTime}分
+                        <Typography variant="body1">{recipe.name}</Typography>                        <Typography variant="caption" color="text.secondary">
+                          調理時間: {recipe.cookTime}分
                         </Typography>
                       </Box>
                       <Button

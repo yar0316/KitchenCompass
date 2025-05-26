@@ -11,18 +11,14 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-interface MenuItem {
-  id: string;
-  name: string;
-  recipeId: string | null;
-}
+import { MenuItemData } from './types/Menu.types';
 
 interface MenuItemCardProps {
-  item: MenuItem;
+  item: MenuItemData;
   date: Date;
   mealType: 'breakfast' | 'lunch' | 'dinner';
   index: number;
-  onItemClick?: (item: MenuItem) => void;
+  onItemClick?: (item: MenuItemData) => void;
   setMenuItemRef?: (ref: HTMLElement | null, id: string) => void;
 }
 

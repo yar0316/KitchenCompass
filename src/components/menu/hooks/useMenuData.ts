@@ -9,11 +9,13 @@ import {
 } from '../types/Menu.types';
 import { dateUtils } from '../utils/dateUtils';
 import { 
-  listMenus
+  listMenus,
+  listMenuItems
 } from '../../../graphql/queries';
 import { 
   createMenu, 
-  createMenuItem
+  createMenuItem,
+  deleteMenuItem
 } from '../../../graphql/mutations';
 
 // GraphQL レスポンス型定義
@@ -211,8 +213,47 @@ export const useMenuData = () => {
       setError(e as Error);
     } finally {
       setLoading(false);
+    }  }, []);
+
+  /**
+   * 指定されたMenuの既存MenuItemをすべて削除
+   */
+  const deleteExistingMenuItems = async (menuId: string, mealType: 'breakfast' | 'lunch' | 'dinner') => {
+    try {
+      const client = generateClient();
+      
+      // 該当するMenuItemを取得
+      const menuItemsResponse = await client.graphql({
+        query: listMenuItems,
+        variables: {
+          filter: {
+            menuId: { eq: menuId },
+            mealType: { eq: mealType }
+          }
+        }
+      }) as { data: { listMenuItems: { items: GraphQLMenuItem[] } } };
+
+      const existingItems = menuItemsResponse.data.listMenuItems.items;
+
+      // 既存のMenuItemを削除
+      for (const item of existingItems) {
+        await client.graphql({
+          query: deleteMenuItem,
+          variables: {
+            input: {
+              id: item.id
+            }
+          }
+        });
+      }
+
+      console.log(`[deleteExistingMenuItems] ${existingItems.length}個のMenuItemを削除しました`);
+      return true;
+    } catch (error) {
+      console.error('[deleteExistingMenuItems] エラー:', error);
+      throw error;
     }
-  }, []);
+  };
 
   /**
    * 初回マウント時にデータを取得
@@ -264,25 +305,28 @@ export const useMenuData = () => {
         
         menuId = newMenuResponse.data.createMenu.id;
       }
+        // まず該当する食事タイプの既存MenuItemをすべて削除
+      await deleteExistingMenuItems(menuId, mealType);
       
-      // MenuItemを作成または更新
+      // MenuItemを作成
       if (mealData.menuItems && mealData.menuItems.length > 0) {
-        const menuItem = mealData.menuItems[0];
-        
-        await client.graphql({
-          query: createMenuItem,
-          variables: {
-            input: {
-              name: menuItem.name,
-              mealType: mealType,
-              menuId: menuId,
-              recipeId: menuItem.recipeId,
-              isOutside: menuItem.isOutside || false,
-              outsideLocation: menuItem.outsideLocation || '',
-              notes: menuItem.notes || ''
+        // 複数のMenuItemがある場合はすべて作成
+        for (const menuItem of mealData.menuItems) {
+          await client.graphql({
+            query: createMenuItem,
+            variables: {
+              input: {
+                name: menuItem.name,
+                mealType: mealType,
+                menuId: menuId,
+                recipeId: menuItem.recipeId,
+                isOutside: menuItem.isOutside || false,
+                outsideLocation: menuItem.outsideLocation || '',
+                notes: menuItem.notes || ''
+              }
             }
-          }
-        });
+          });
+        }
       }
       
       // ローカル状態も更新
@@ -335,78 +379,159 @@ export const useMenuData = () => {
       });
       throw e;
     }
-  };
-
-  /**
+  };  /**
    * メニューの移動処理
    */
-  const handleMoveMeal = (
+  const handleMoveMeal = async (
     meal: MealData,
     fromDate: Date,
     toDate: Date,
-    toType: 'breakfast' | 'lunch' | 'dinner'
+    toType: 'breakfast' | 'lunch' | 'dinner',
+    specificItemId?: string // 特定のアイテムIDを指定（オプション）
   ) => {
-    const updatedMenuPlans = { ...menuPlans };
-    
-    // 全ての週データを統合して検索
-    const allWeeks = [
-      { key: 'previousWeek' as keyof MenuPlans, data: updatedMenuPlans.previousWeek },
-      { key: 'currentWeek' as keyof MenuPlans, data: updatedMenuPlans.currentWeek },
-      { key: 'nextWeek' as keyof MenuPlans, data: updatedMenuPlans.nextWeek }
-    ].filter(week => week.data);
-    
-    let sourceWeekKey: keyof MenuPlans | null = null;
-    let targetWeekKey: keyof MenuPlans | null = null;
-    
-    // ソースとターゲットの週を特定
-    for (const week of allWeeks) {
-      if (week.data!.days.some((day: DayData) => dateUtils.isSameDay(day.date, fromDate))) {
-        sourceWeekKey = week.key;
+    try {
+      console.log('[handleMoveMeal] 開始:', { meal, fromDate, toDate, toType, specificItemId });
+      
+      const updatedMenuPlans = { ...menuPlans };
+      
+      // 全ての週データを統合して検索
+      const allWeeks = [
+        { key: 'previousWeek' as keyof MenuPlans, data: updatedMenuPlans.previousWeek },
+        { key: 'currentWeek' as keyof MenuPlans, data: updatedMenuPlans.currentWeek },
+        { key: 'nextWeek' as keyof MenuPlans, data: updatedMenuPlans.nextWeek }
+      ].filter(week => week.data);
+      
+      let sourceWeekKey: keyof MenuPlans | null = null;
+      let targetWeekKey: keyof MenuPlans | null = null;
+      
+      // ソースとターゲットの週を特定
+      for (const week of allWeeks) {
+        if (week.data!.days.some((day: DayData) => dateUtils.isSameDay(day.date, fromDate))) {
+          sourceWeekKey = week.key;
+        }
+        if (week.data!.days.some((day: DayData) => dateUtils.isSameDay(day.date, toDate))) {
+          targetWeekKey = week.key;
+        }
       }
-      if (week.data!.days.some((day: DayData) => dateUtils.isSameDay(day.date, toDate))) {
-        targetWeekKey = week.key;
+      
+      if (!sourceWeekKey || !targetWeekKey || !updatedMenuPlans[sourceWeekKey] || !updatedMenuPlans[targetWeekKey]) {
+        console.log('[handleMoveMeal] 週データが見つかりません');
+        return;
       }
+      
+      const sourceWeekData = updatedMenuPlans[sourceWeekKey]!;
+      
+      const sourceDayIndex = sourceWeekData.days.findIndex(
+        day => dateUtils.isSameDay(day.date, fromDate)
+      );
+      
+      if (sourceDayIndex === -1) {
+        console.log('[handleMoveMeal] 日付が見つかりません');
+        return;
+      }
+      
+      const sourceDay = sourceWeekData.days[sourceDayIndex];
+      
+      const itemToMoveIndex = sourceDay.meals.findIndex(item => item.type === meal.type);
+      
+      if (itemToMoveIndex === -1) {
+        console.log('[handleMoveMeal] 移動対象のmealが見つかりません');
+        return;
+      }
+      
+      const sourceMeal = sourceDay.meals[itemToMoveIndex];
+      
+      // 特定のアイテムIDが指定されている場合の処理
+      if (specificItemId && sourceMeal.menuItems && sourceMeal.menuItems.length > 1) {
+        // 特定のメニューアイテムのみを移動
+        const itemToMove = sourceMeal.menuItems.find(item => item.id === specificItemId);
+        
+        if (!itemToMove) {
+          console.log('[handleMoveMeal] 指定されたアイテムが見つかりません:', specificItemId);
+          return;
+        }
+          // 移動先のmealデータを作成（単一アイテム）
+        const movedMeal: MealData = {
+          id: `${toDate.toISOString().split('T')[0]}-${toType}`,
+          type: toType,
+          mealType: toType,
+          name: itemToMove.name,
+          recipeId: itemToMove.recipeId || null,
+          menuItems: [itemToMove],
+        };
+        
+        // バックエンドに保存
+        await handleSaveMeal(toDate, toType, movedMeal);
+        
+        // 移動元から該当アイテムを削除
+        const updatedSourceItems = sourceMeal.menuItems.filter(item => item.id !== specificItemId);
+        
+        if (updatedSourceItems.length === 0) {
+          // 全てのアイテムが移動された場合、空のmealに設定
+          const emptyMeal: MealData = {
+            id: `${fromDate.toISOString().split('T')[0]}-${sourceMeal.type}`,
+            type: sourceMeal.type,
+            mealType: sourceMeal.type,
+            name: '',
+            recipeId: null,
+            menuItems: [],
+          };
+          
+          sourceDay.meals[itemToMoveIndex] = emptyMeal;
+          
+          // バックエンドでも空の状態に更新（既存MenuItemをすべて削除）
+          await handleSaveMeal(fromDate, sourceMeal.type, emptyMeal);
+        } else {
+          // 残りのアイテムでmealを更新
+          const updatedSourceMeal: MealData = {
+            ...sourceMeal,
+            menuItems: updatedSourceItems,
+            name: updatedSourceItems[0]?.name || sourceMeal.name
+          };
+          
+          sourceDay.meals[itemToMoveIndex] = updatedSourceMeal;
+          
+          // バックエンドに更新を保存（既存を削除してから新しいアイテムを作成）
+          await handleSaveMeal(fromDate, sourceMeal.type, updatedSourceMeal);
+        }
+          } else {
+        // 食事枠全体を移動（従来の処理）
+        const movedMeal: MealData = {
+          ...sourceMeal,
+          type: toType,
+          mealType: toType,
+          id: `${toDate.toISOString().split('T')[0]}-${toType}`
+        };
+        
+        // バックエンドに保存
+        await handleSaveMeal(toDate, toType, movedMeal);
+        
+        // 移動元を空の状態に設定
+        const emptyMeal: MealData = {
+          id: `${fromDate.toISOString().split('T')[0]}-${sourceMeal.type}`,
+          type: sourceMeal.type,
+          mealType: sourceMeal.type,
+          name: '',
+          recipeId: null,
+          menuItems: [],
+        };
+        
+        sourceDay.meals[itemToMoveIndex] = emptyMeal;
+        
+        // バックエンドでも空の状態に更新（既存MenuItemをすべて削除）
+        await handleSaveMeal(fromDate, sourceMeal.type, emptyMeal);
+      }
+      
+      // 移動完了後、データを再取得して最新状態を反映
+      await fetchMenus();
+      
+      console.log('[handleMoveMeal] 移動完了');
+      
+    } catch (error) {
+      console.error('[handleMoveMeal] エラー:', error);
+      // エラーの場合は元のデータを再取得
+      await fetchMenus();
     }
-    
-    if (!sourceWeekKey || !targetWeekKey || !updatedMenuPlans[sourceWeekKey] || !updatedMenuPlans[targetWeekKey]) return;
-    
-    const sourceWeekData = updatedMenuPlans[sourceWeekKey]!;
-    const targetWeekData = updatedMenuPlans[targetWeekKey]!;
-    
-    const sourceDayIndex = sourceWeekData.days.findIndex(
-      day => dateUtils.isSameDay(day.date, fromDate)
-    );
-    
-    const targetDayIndex = targetWeekData.days.findIndex(
-      day => dateUtils.isSameDay(day.date, toDate)
-    );
-    
-    if (sourceDayIndex === -1 || targetDayIndex === -1) {
-      return;
-    }
-    
-    const sourceDay = sourceWeekData.days[sourceDayIndex];
-    const targetDay = targetWeekData.days[targetDayIndex];
-    
-    const itemToMoveIndex = sourceDay.meals.findIndex(item => item.id === meal.id);
-    
-    if (itemToMoveIndex === -1) {
-      return;
-    }
-    
-    const itemToMove = sourceDay.meals[itemToMoveIndex];
-    
-    // アイテムをソースから削除
-    sourceDay.meals.splice(itemToMoveIndex, 1);
-    
-    // ターゲットに追加
-    targetDay.meals.push({
-      ...itemToMove,
-      type: toType,
-      mealType: toType
-    });
-    
-    setMenuPlans(updatedMenuPlans);
   };
 
   /**

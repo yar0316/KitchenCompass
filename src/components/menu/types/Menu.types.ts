@@ -63,7 +63,7 @@ export interface Template {
       mealType: 'breakfast' | 'lunch' | 'dinner';
       menuItems: Array<{
         name: string;
-        recipeId?: string;
+        recipeId?: string | null;
       }>;
     }>;
   }>;
