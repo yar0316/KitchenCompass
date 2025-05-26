@@ -281,25 +281,18 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
       setFilteredRecipes(allRecipes);
     }
   }, [searchQuery, allRecipes]);
-
   useEffect(() => {
     if (open && editingMeal) {
-      if (editingMeal.menuItems && Array.isArray(editingMeal.menuItems) && editingMeal.menuItems.length > 0) {        setMenuItems(editingMeal.menuItems);
+      // 既存の献立を編集する場合
+      if (editingMeal.menuItems && Array.isArray(editingMeal.menuItems) && editingMeal.menuItems.length > 0) {
+        // 既存のメニューアイテムがある場合
+        setMenuItems(editingMeal.menuItems);
         setCurrentEditingItem(editingMeal.menuItems[0]);
-        
-        // TODO: 将来的にレシピ選択機能を実装時に有効化
-        /*
-        const firstItem = editingMeal.menuItems[0];
-        if (firstItem.recipeId) {
-          const recipe = allRecipes.find(r => r.id === firstItem.recipeId);
-          setSelectedRecipe(recipe || null);
-        } else {
-          setSelectedRecipe(null);
-        }
-        */
-      } else {        const initialItem = {
-          id: `menu-${Date.now()}`,
-          name: editingMeal.name || '',
+      } else if (editingMeal.name && editingMeal.name.trim() !== '') {
+        // 旧形式の献立データで、nameが設定されている場合
+        const initialItem = {
+          id: editingMeal.id || `menu-${Date.now()}`,
+          name: editingMeal.name,
           recipeId: editingMeal.recipeId || null,
           mealType: mealType || 'breakfast',
           isOutside: false,
@@ -308,17 +301,23 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
         };
         setMenuItems([initialItem]);
         setCurrentEditingItem(initialItem);
-        
-        // TODO: 将来的にレシピ選択機能を実装時に有効化
-        /*
-        if (editingMeal.recipeId) {
-          const recipe = allRecipes.find(r => r.id === editingMeal.recipeId);
-          setSelectedRecipe(recipe || null);
-        } else {
-          setSelectedRecipe(null);
-        }
-        */
-      }      if (editingMeal.isOuting) {
+      } else {
+        // 空の献立の場合（新規追加モード）
+        const initialItem = {
+          id: `menu-${Date.now()}`,
+          name: '',
+          recipeId: null,
+          mealType: mealType || 'breakfast',
+          isOutside: false,
+          outsideLocation: '',
+          notes: ''
+        };
+        setMenuItems([initialItem]);
+        setCurrentEditingItem(initialItem);
+      }
+
+      // 外食情報の設定
+      if (editingMeal.isOuting) {
         setOutingInfo({
           isOuting: true,
           restaurantName: editingMeal.restaurantName || '',
@@ -330,7 +329,9 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
           restaurantName: '',
           notes: ''
         });
-      }} else {
+      }
+    } else if (open) {
+      // 新規作成の場合
       const initialItem = { 
         id: `menu-${Date.now()}`, 
         name: '', 
@@ -342,8 +343,6 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
       };
       setMenuItems([initialItem]);
       setCurrentEditingItem(initialItem);
-      // TODO: 将来的にレシピ選択機能を実装時に有効化
-      // setSelectedRecipe(null);
       setOutingInfo({
         isOuting: false,
         restaurantName: '',
@@ -357,9 +356,14 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
           inputRef.current.focus();
         }
       }, 100);
-    }    setSearchQuery('');
-    setFilteredRecipes(allRecipes);
-  }, [open, editingMeal, allRecipes, mealType]);
+    }
+
+    setSearchQuery('');
+    // filteredRecipesの設定はallRecipesが設定された後に行う
+    if (allRecipes.length > 0) {
+      setFilteredRecipes(allRecipes);
+    }
+  }, [open, editingMeal, mealType]);
 
   const handleSave = () => {
     if (editingItemId) {

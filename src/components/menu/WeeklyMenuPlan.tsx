@@ -363,11 +363,13 @@ const DroppableMealZone = ({
   children,
   date,
   mealType,
+  existingMeal,
   onMealClick,
 }: {
   children: React.ReactNode;
   date: Date;
   mealType: 'breakfast' | 'lunch' | 'dinner';
+  existingMeal?: MealData | null;
   onMealClick: (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner', existingMeal?: MealData | null) => void;
 }) => {
   const { isOver, setNodeRef } = useDroppable({
@@ -385,31 +387,13 @@ const DroppableMealZone = ({
       return;
     }
 
-    // まずは対応するメニュー項目があるかを検索
-    // カード内の子要素からメニューデータを取得しようとする
-    const cardElement = (e.currentTarget as HTMLElement).querySelector('.MuiCard-root');
-    const mealComponent = cardElement ? cardElement.querySelector('[data-meal]') : null;
-    
-    let existingMeal: MealData | undefined;
-    
-    // コンポーネントからデータ属性経由でメニューデータを取得できるかを試みる
-    if (mealComponent && mealComponent.getAttribute('data-meal')) {
-      try {
-        existingMeal = JSON.parse(mealComponent.getAttribute('data-meal') || '');
-      } catch (error) {
-        console.error('Failed to parse meal data:', error);
-      }
-    }
-    
-    // リアクトの子コンポーネントからプロパティを取得する試みは難しいので、
-    // childrenの中から直接DraggableMealItemコンポーネントとそのpropsを取得するのは複雑
-    // そのため、React.Children.mapなどを使わずに、実装を簡略化
-    
-    if (existingMeal) {
+    // 既存の献立データがある場合はそれを使用、ない場合は空のデータを生成
+    if (existingMeal && existingMeal.menuItems && existingMeal.menuItems.length > 0) {
       // 既存のメニューデータがある場合はそれを使う
       onMealClick(date, mealType, existingMeal);
-    } else {      // 見つからない場合は空のメニューデータを生成
-      const emptyMeal = {
+    } else {
+      // 見つからない場合は空のメニューデータを生成
+      const emptyMeal: MealData = {
         id: `empty-${date.toISOString()}-${mealType}`,
         name: '',
         type: mealType,
@@ -727,12 +711,12 @@ const WeeklyMenuPlan: React.FC<WeeklyMenuPlanProps> = ({
                         menuItems: [],
                         mealType: mealTypeTyped
                       };
-                      
-                      return (
+                        return (
                         <DroppableMealZone 
                           key={`meal-container-${mealType}`}
                           date={day.date}
                           mealType={mealTypeTyped}
+                          existingMeal={meal}
                           onMealClick={onMealClick}
                         >
                           <DraggableMealItem
