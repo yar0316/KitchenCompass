@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { generateClient } from 'aws-amplify/api';
+import { getCurrentUser } from 'aws-amplify/auth';
 import { 
   MenuPlans, 
   MealData, 
@@ -264,8 +265,12 @@ export const useMenuData = () => {
    * 献立保存処理（GraphQL）
    */  const handleSaveMeal = async (date: Date, mealType: 'breakfast' | 'lunch' | 'dinner', mealData: MealData) => {
     try {      console.log('[handleSaveMeal] GraphQLでmealDataを保存:', mealData);
-      console.log('[handleSaveMeal] 元の日付:', date);
-        const client = generateClient();
+      console.log('[handleSaveMeal] 元の日付:', date);      const client = generateClient();
+      
+      // 認証されたユーザー情報を取得
+      const currentUser = await getCurrentUser();
+      const userId = currentUser.userId;
+      
       // DynamoDBのAWSDateTime形式に対応：UTC時間で指定日の午前0時に設定
       const targetDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0));
       const dateTimeStr = targetDate.toISOString();
@@ -292,13 +297,13 @@ export const useMenuData = () => {
       if (existingMenuResponse.data.listMenus.items.length > 0) {
         // 既存のMenuを使用
         menuId = existingMenuResponse.data.listMenus.items[0].id;
-      } else {
-        // 新しいMenuを作成（AWSDateTime形式で送信）
+      } else {        // 新しいMenuを作成（AWSDateTime形式で送信）
         const newMenuResponse = await client.graphql({
           query: createMenu,
           variables: {
             input: {
-              date: dateTimeStr
+              date: dateTimeStr,
+              owner: userId
             }
           }
         }) as { data: { createMenu: GraphQLMenu } };

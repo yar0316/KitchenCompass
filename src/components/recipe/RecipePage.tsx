@@ -24,6 +24,7 @@ import RecipeFormDialog from './RecipeFormDialog';
 import RecipeItem from './RecipeItem';
 import RecipeDetails from './RecipeDetails';
 import { generateClient } from 'aws-amplify/api';
+import { getCurrentUser } from 'aws-amplify/auth';
 import { listRecipes } from '../../graphql/queries';
 import { createRecipe, updateRecipe, deleteRecipe } from '../../graphql/mutations';
 import { Recipe, CreateRecipeInput, UpdateRecipeInput, DeleteRecipeInput } from '../../API';
@@ -198,9 +199,13 @@ const RecipePage: React.FC = () => {
         return recipesToSort;
     }
   };
-    // 新しいレシピの追加
+  // 新しいレシピの追加
   const handleAddRecipe = async (newRecipe: Recipe) => {
     try {
+      // 認証されたユーザー情報を取得
+      const currentUser = await getCurrentUser();
+      const userId = currentUser.userId;
+      
       // 材料と手順をJSON文字列に変換
       const ingredientsJson = JSON.stringify(newRecipe.ingredients || []);
       const instructionsJson = JSON.stringify(newRecipe.steps || []);
@@ -220,9 +225,10 @@ const RecipePage: React.FC = () => {
         imageUrl: newRecipe.imageUrl || DUMMY_IMAGE_URL,
         ingredientsJson: ingredientsJson,
         instructionsJson: instructionsJson,
-        createdBy: 'user', // 実際のユーザーIDに変更する必要があります
+        createdBy: userId,
+        owner: userId,
         favorite: false
-      };      // Amplify V6でのGraphQLミューテーション呼び出し
+      };// Amplify V6でのGraphQLミューテーション呼び出し
       const result = await client.graphql({
         query: createRecipe,
         variables: { input: createInput }

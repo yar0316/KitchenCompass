@@ -19,6 +19,7 @@ import ShoppingListItem from './ShoppingListItem';
 import NewShoppingListDialog from './NewShoppingListDialog';
 import ShoppingListDetails from './ShoppingListDetails';
 import { generateClient } from 'aws-amplify/api';
+import { getCurrentUser } from 'aws-amplify/auth';
 import { Schema } from '../../../amplify/data/resource';
 import { type ShoppingList } from '../../API';
 
@@ -69,15 +70,20 @@ const ShoppingListPage: React.FC = () => {
       setSelectedList(sortedLists[0].id);
     }
   }, [shoppingLists, selectedList]);
-    // 新しい買い物リストの追加
+  // 新しい買い物リストの追加
   const handleAddShoppingList = async (newList: { name: string; description?: string; dueDate?: string }) => {
     try {
+      // 認証されたユーザー情報を取得
+      const currentUser = await getCurrentUser();
+      const userId = currentUser.userId;
+      
       // APIを使用して新しいShoppingListを作成
       const result = await client.models.ShoppingList.create({
         name: newList.name,
         description: newList.description || undefined,
         dueDate: newList.dueDate || undefined,
-        isCompleted: false
+        isCompleted: false,
+        owner: userId
       });
       
       // 作成した新しいリストを状態に追加

@@ -29,6 +29,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import ViewDayIcon from '@mui/icons-material/ViewDay';
 import ViewWeekIcon from '@mui/icons-material/ViewWeek';
+import { getCurrentUser } from 'aws-amplify/auth';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import AssignmentIcon from '@mui/icons-material/Assignment';

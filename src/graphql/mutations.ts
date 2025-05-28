@@ -339,23 +339,7 @@ export const createMenuItem = /* GraphQL */ `
       outsideLocation
       notes
       menuId
-      menu {
-        id
-        date
-        notes
-        owner
-        createdAt
-        updatedAt
-      }
       recipeId
-      recipe {
-        id
-        name
-        description
-        imageUrl
-        cookingTime: cookTime
-        category
-      }
       createdAt
       updatedAt
     }
@@ -375,23 +359,7 @@ export const updateMenuItem = /* GraphQL */ `
       outsideLocation
       notes
       menuId
-      menu {
-        id
-        date
-        notes
-        owner
-        createdAt
-        updatedAt
-      }
       recipeId
-      recipe {
-        id
-        name
-        description
-        imageUrl
-        cookingTime: cookTime
-        category
-      }
       createdAt
       updatedAt
     }

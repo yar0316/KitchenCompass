@@ -9,8 +9,7 @@ import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
  * - ShoppingList: 買い物リスト
  * - ShoppingItem: 買い物アイテム
  */
-const schema = a.schema({
-  // ユーザープロフィール
+const schema = a.schema({  // ユーザープロフィール
   UserProfile: a
     .model({
       userId: a.string().required(),
@@ -36,12 +35,7 @@ const schema = a.schema({
       // リレーション：お気に入りレシピ（後で追加）
       // favoriteRecipes: a.hasMany('UserRecipeFavorite', 'userId'),
     })
-    // 元の認証設定（コメントアウト）
-    // .authorization((allow) => allow.owner())
-    // 一時的に誰でもアクセス可能に設定
-    .authorization((allow) => allow.publicApiKey()),
-    
-  // レシピ情報
+    .authorization((allow) => allow.owner()),  // レシピ情報
   Recipe: a
     .model({
       // 基本情報
@@ -75,15 +69,9 @@ const schema = a.schema({
       // MenuItem との関連付け
       menuItems: a.hasMany('MenuItem', 'recipeId'),
     })
-    // 元の認証設定（コメントアウト）
-    // .authorization((allow) => [
-    //   allow.owner(),
-    //   allow.authenticated().to(['read']),
-    // ])
-    // 一時的に誰でもアクセス可能に設定
-    .authorization((allow) => allow.publicApiKey()),
-    
-  // 献立情報
+    .authorization((allow) => [
+      allow.owner()
+    ]),  // 献立情報
   Menu: a
     .model({
       date: a.datetime().required(), // 日付
@@ -93,12 +81,7 @@ const schema = a.schema({
       // 献立項目（リスト型） - 修正：hasMany構文
       menuItems: a.hasMany('MenuItem', 'menuId'),
     })
-    // 元の認証設定（コメントアウト）
-    // .authorization((allow) => allow.owner())
-    // 一時的に誰でもアクセス可能に設定
-    .authorization((allow) => allow.publicApiKey()),
-    
-  // 献立項目
+    .authorization((allow) => allow.owner()),  // 献立項目
   MenuItem: a
     .model({
       // 基本情報
@@ -118,12 +101,7 @@ const schema = a.schema({
       recipeId: a.string(), // レシピID（任意）
       recipe: a.belongsTo('Recipe', 'recipeId'), // Recipeモデルとの関連付け
     })
-    // 元の認証設定（コメントアウト）
-    // .authorization((allow) => allow.owner())
-    // 一時的に誰でもアクセス可能に設定
-    .authorization((allow) => allow.publicApiKey()),
-    
-  // 買い物リスト
+    .authorization((allow) => allow.owner()),  // 買い物リスト
   ShoppingList: a
     .model({
       // 基本情報
@@ -136,12 +114,7 @@ const schema = a.schema({
       // リレーション - 修正：hasMany構文
       items: a.hasMany('ShoppingItem', 'shoppingListId'),
     })
-    // 元の認証設定（コメントアウト）
-    // .authorization((allow) => allow.owner())
-    // 一時的に誰でもアクセス可能に設定
-    .authorization((allow) => allow.publicApiKey()),
-    
-  // 買い物アイテム
+    .authorization((allow) => allow.owner()),  // 買い物アイテム
   ShoppingItem: a
     .model({
       // 基本情報
@@ -157,12 +130,7 @@ const schema = a.schema({
       shoppingList: a.belongsTo('ShoppingList', 'shoppingListId'),
       sourceRecipe: a.string(), // どのレシピから追加されたか
     })
-    // 元の認証設定（コメントアウト）
-    // .authorization((allow) => allow.owner())
-    // 一時的に誰でもアクセス可能に設定
-    .authorization((allow) => allow.publicApiKey()),
-    
-  // 献立テンプレート（要件2.1.3）
+    .authorization((allow) => allow.owner()),  // 献立テンプレート（要件2.1.3）
   MenuTemplate: a
     .model({
       // 基本情報
@@ -173,10 +141,7 @@ const schema = a.schema({
       // テンプレート内容 - JSON文字列として保存
       templateItemsJson: a.json(), // JSON形式テンプレート項目
     })
-    // 元の認証設定（コメントアウト）
-    // .authorization((allow) => allow.owner())
-    // 一時的に誰でもアクセス可能に設定
-    .authorization((allow) => allow.publicApiKey()),
+    .authorization((allow) => allow.owner()),
 });
 
 export type Schema = ClientSchema<typeof schema>;
@@ -184,11 +149,7 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
   schema,
   authorizationModes: {
-    // defaultAuthorizationMode: 'userPool',
-    defaultAuthorizationMode: 'apiKey', // 一時的に誰でもアクセス可能に設定
-    // 一時的にAPIキー認証を追加（認証情報なしでアクセス可能に）
-    apiKeyAuthorizationMode: {
-      expiresInDays: 7, // 7日間有効
-    },
+    defaultAuthorizationMode: 'userPool',
+    // API Keyモードを削除し、User Pool認証のみに変更
   },
 });

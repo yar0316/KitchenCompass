@@ -132,25 +132,29 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
     setCurrentEditingItem(newItem);
     // setSelectedRecipe(recipe);
   };
-
   const handleDeleteMenuItem = (itemId: string) => {
-    if (menuItems.length <= 1) {
-      return;
-    }
-
     const updatedItems = menuItems.filter(item => item.id !== itemId);
-    setMenuItems(updatedItems);    if (currentEditingItem && currentEditingItem.id === itemId) {
-      setCurrentEditingItem(updatedItems[0] || null);
-
-      // TODO: 将来的にレシピ選択機能を実装時に有効化
-      /*
-      if (updatedItems[0]) {
-        const recipe = updatedItems[0].recipeId
-          ? allRecipes.find(r => r.id === updatedItems[0].recipeId) || null
-          : null;
-        setSelectedRecipe(recipe);
+    
+    // アイテムがすべて削除された場合、空のアイテムを1つ追加
+    if (updatedItems.length === 0) {
+      const newEmptyItem = {
+        id: `menu-${Date.now()}`,
+        name: '',
+        recipeId: null,
+        mealType: mealType || 'breakfast',
+        isOutside: false,
+        outsideLocation: '',
+        notes: ''
+      };
+      setMenuItems([newEmptyItem]);
+      setCurrentEditingItem(newEmptyItem);
+    } else {
+      setMenuItems(updatedItems);
+      
+      // 削除されたアイテムが選択中だった場合、別のアイテムを選択
+      if (currentEditingItem && currentEditingItem.id === itemId) {
+        setCurrentEditingItem(updatedItems[0] || null);
       }
-      */
     }
 
     if (editingItemId === itemId) {
@@ -269,7 +273,6 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
         .finally(() => setLoadingRecipes(false));
     }
   }, [open]);
-
   useEffect(() => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -356,14 +359,12 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
           inputRef.current.focus();
         }
       }, 100);
-    }
-
-    setSearchQuery('');
+    }    setSearchQuery('');
     // filteredRecipesの設定はallRecipesが設定された後に行う
     if (allRecipes.length > 0) {
       setFilteredRecipes(allRecipes);
     }
-  }, [open, editingMeal, mealType]);
+  }, [open, editingMeal, mealType, allRecipes]);
 
   const handleSave = () => {
     if (editingItemId) {
@@ -529,37 +530,30 @@ const MenuPlanningDialog: React.FC<MenuPlanningDialogProps> = ({
                       />
                     </ClickAwayListener>
                   ) : (
-                    <>
-                      <ListItemText
+                    <>                      <ListItemText
                         primary={item.name || '(未入力)'}
                         primaryTypographyProps={{
                           color: item.name ? 'text.primary' : 'text.secondary',
                           fontStyle: item.name ? 'normal' : 'italic'
                         }}
                         secondary={item.recipeId ? 'レシピあり' : undefined}
-                        onClick={() => !item.name && handleStartEditing(item)}
-                      />
-                      <ListItemSecondaryAction>
-                        {!item.name && (
-                          <IconButton
-                            edge="end"
-                            size="small"
-                            onClick={() => handleStartEditing(item)}
-                            sx={{ mr: 1 }}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        )}
-                        {menuItems.length > 1 && (
-                          <IconButton
-                            edge="end"
-                            size="small"
-                            onClick={() => handleDeleteMenuItem(item.id)}
-                            sx={{ color: 'error.light' }}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        )}
+                      />                      <ListItemSecondaryAction>
+                        <IconButton
+                          edge="end"
+                          size="small"
+                          onClick={() => handleStartEditing(item)}
+                          sx={{ mr: 1 }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          edge="end"
+                          size="small"
+                          onClick={() => handleDeleteMenuItem(item.id)}
+                          sx={{ color: 'error.light' }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
                       </ListItemSecondaryAction>
                     </>
                   )}

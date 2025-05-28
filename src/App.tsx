@@ -4,6 +4,7 @@ import { BrowserRouter, useLocation } from 'react-router-dom';
 import { lightTheme, darkTheme } from './theme/theme';
 import Layout from './components/layout/Layout';
 import AppRoutes from './routes/AppRoutes';
+import AuthWrapper from './components/auth/AuthWrapper';
 // Amplify設定を読み込む
 import './amplify/config';
 
@@ -21,17 +22,18 @@ const AppContent = () => {
   const handleDarkModeToggle = () => {
     setUseDarkMode(!useDarkMode);
   };
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Layout
-        isDarkMode={useDarkMode}
-        onDarkModeToggle={handleDarkModeToggle}
-        currentPath={currentPath}
-      >
-        <AppRoutes />
-      </Layout>
+      <AuthWrapper>
+        <Layout
+          isDarkMode={useDarkMode}
+          onDarkModeToggle={handleDarkModeToggle}
+          currentPath={currentPath}
+        >
+          <AppRoutes />
+        </Layout>
+      </AuthWrapper>
     </ThemeProvider>
   );
 };
