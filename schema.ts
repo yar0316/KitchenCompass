@@ -84,10 +84,52 @@ export const schema: Schema = {
                     "isRequired": false,
                     "attributes": []
                 },
-                "preferences": {
-                    "name": "preferences",
+                "notifications": {
+                    "name": "notifications",
                     "isArray": false,
-                    "type": "AWSJSON",
+                    "type": "Boolean",
+                    "isRequired": false,
+                    "attributes": []
+                },
+                "emailNotifications": {
+                    "name": "emailNotifications",
+                    "isArray": false,
+                    "type": "Boolean",
+                    "isRequired": false,
+                    "attributes": []
+                },
+                "pushNotifications": {
+                    "name": "pushNotifications",
+                    "isArray": false,
+                    "type": "Boolean",
+                    "isRequired": false,
+                    "attributes": []
+                },
+                "darkMode": {
+                    "name": "darkMode",
+                    "isArray": false,
+                    "type": "Boolean",
+                    "isRequired": false,
+                    "attributes": []
+                },
+                "autoUpdate": {
+                    "name": "autoUpdate",
+                    "isArray": false,
+                    "type": "Boolean",
+                    "isRequired": false,
+                    "attributes": []
+                },
+                "recipePortionSize": {
+                    "name": "recipePortionSize",
+                    "isArray": false,
+                    "type": "Int",
+                    "isRequired": false,
+                    "attributes": []
+                },
+                "dataSync": {
+                    "name": "dataSync",
+                    "isArray": false,
+                    "type": "Boolean",
                     "isRequired": false,
                     "attributes": []
                 },
@@ -135,8 +177,10 @@ export const schema: Schema = {
                     "properties": {
                         "rules": [
                             {
-                                "allow": "public",
-                                "provider": "apiKey",
+                                "provider": "userPools",
+                                "ownerField": "owner",
+                                "allow": "owner",
+                                "identityClaim": "cognito:username",
                                 "operations": [
                                     "create",
                                     "update",
@@ -323,8 +367,10 @@ export const schema: Schema = {
                     "properties": {
                         "rules": [
                             {
-                                "allow": "public",
-                                "provider": "apiKey",
+                                "provider": "userPools",
+                                "ownerField": "owner",
+                                "allow": "owner",
+                                "identityClaim": "cognito:username",
                                 "operations": [
                                     "create",
                                     "update",
@@ -413,8 +459,10 @@ export const schema: Schema = {
                     "properties": {
                         "rules": [
                             {
-                                "allow": "public",
-                                "provider": "apiKey",
+                                "provider": "userPools",
+                                "ownerField": "owner",
+                                "allow": "owner",
+                                "identityClaim": "cognito:username",
                                 "operations": [
                                     "create",
                                     "update",
@@ -545,8 +593,10 @@ export const schema: Schema = {
                     "properties": {
                         "rules": [
                             {
-                                "allow": "public",
-                                "provider": "apiKey",
+                                "provider": "userPools",
+                                "ownerField": "owner",
+                                "allow": "owner",
+                                "identityClaim": "cognito:username",
                                 "operations": [
                                     "create",
                                     "update",
@@ -649,8 +699,10 @@ export const schema: Schema = {
                     "properties": {
                         "rules": [
                             {
-                                "allow": "public",
-                                "provider": "apiKey",
+                                "provider": "userPools",
+                                "ownerField": "owner",
+                                "allow": "owner",
+                                "identityClaim": "cognito:username",
                                 "operations": [
                                     "create",
                                     "update",
@@ -773,8 +825,10 @@ export const schema: Schema = {
                     "properties": {
                         "rules": [
                             {
-                                "allow": "public",
-                                "provider": "apiKey",
+                                "provider": "userPools",
+                                "ownerField": "owner",
+                                "allow": "owner",
+                                "identityClaim": "cognito:username",
                                 "operations": [
                                     "create",
                                     "update",
@@ -854,8 +908,10 @@ export const schema: Schema = {
                     "properties": {
                         "rules": [
                             {
-                                "allow": "public",
-                                "provider": "apiKey",
+                                "provider": "userPools",
+                                "ownerField": "owner",
+                                "allow": "owner",
+                                "identityClaim": "cognito:username",
                                 "operations": [
                                     "create",
                                     "update",
@@ -881,5 +937,5 @@ export const schema: Schema = {
     },
     "nonModels": {},
     "codegenVersion": "3.4.4",
-    "version": "66e40756db83d04f732723037a0a707c"
+    "version": "ddd179cbc44c82b440ad14c74cbd4935"
 };

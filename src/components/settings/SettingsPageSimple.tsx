@@ -11,6 +11,10 @@ import {
   Switch,
   Divider,
   Button,
+  MenuItem,
+  FormControl,
+  Select,
+  SelectChangeEvent,
   Alert,
   Snackbar,
   Slider,
@@ -18,7 +22,9 @@ import {
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import NotificationsIcon from '@mui/icons-material/Notifications';
+import LanguageIcon from '@mui/icons-material/Language';
 import DataUsageIcon from '@mui/icons-material/DataUsage';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
@@ -27,17 +33,30 @@ import { getUserProfile } from '../../../queries';
 import { updateUserProfile, createUserProfile } from '../../../mutations';
 import { getCurrentUserId, getCurrentUserInfo } from '../../utils/authUtils';
 import type { UserProfile } from '../../../API';
-import { DEFAULT_SETTINGS, type UserSettings } from '../../config/defaultSettings';
 
 /**
- * 設定画面コンポーネント
- * アプリケーション全体の設定を管理し、GraphQLバックエンドと連携します
+ * 設定画面コンポーネント (簡略版)
+ * アプリケーション全体の設定を管理します
  */
-const SettingsPage: React.FC = () => {
+const SettingsPageSimple: React.FC = () => {
   const client = generateClient();
   
-  // 設定の状態（デフォルト値を使用）
-  const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
+  // 設定の状態
+  const [settings, setSettings] = useState({
+    darkMode: false,
+    fontSize: 'medium',
+    language: 'ja',
+    notifications: true,
+    emailNotifications: true,
+    pushNotifications: true,
+    autoUpdate: true,
+    recipePortionSize: 2,
+    dataSync: true,
+    privacy: {
+      shareRecipes: true,
+      publicProfile: false
+    }
+  });
   
   // ローディング状態
   const [loading, setLoading] = useState(true);
@@ -51,62 +70,14 @@ const SettingsPage: React.FC = () => {
     open: false,
     message: '',
     severity: 'success' as 'success' | 'info' | 'warning' | 'error'
-  });// 設定データの読み込み
+  });
+
+  // 設定データの読み込み
   useEffect(() => {
-    let isUnmounted = false;
-    const graphqlClient = generateClient();
-
-    // スナックバー表示関数
-    const showSnackbarLocal = (message: string, severity: 'success' | 'info' | 'warning' | 'error') => {
-      if (!isUnmounted) {
-        setSnackbar({ open: true, message, severity });
-      }
-    };
-
-    // 新しいUserProfileを作成する関数
-    const createNewUserProfile = async (userId: string): Promise<UserProfile | null> => {
-      try {
-        console.log('新しいUserProfileを作成中...');
-        const userInfo = await getCurrentUserInfo();
-          if (!userInfo) {
-          console.error('ユーザー情報を取得できませんでした');
-          throw new Error('ユーザー情報を取得できませんでした');
-        }
-
-        const createResponse = await graphqlClient.graphql({
-          query: createUserProfile,
-          variables: {
-            input: {
-              id: userId,
-              userId: userId,
-              email: userInfo.signInDetails?.loginId || 'unknown@example.com',
-              givenName: userInfo.signInDetails?.loginId?.split('@')[0] || 'User',
-              familyName: '',
-              // 設定項目はDynamoDBのデフォルト値を使用するため明示的に設定しない
-            }
-          }
-        });
-
-        const newProfile = createResponse.data?.createUserProfile;
-        if (newProfile) {
-          console.log('UserProfileが正常に作成されました');
-          showSnackbarLocal('新しいユーザープロファイルを作成しました', 'success');
-          return newProfile;
-        }
-        
-        return null;
-      } catch (createError) {
-        console.error('UserProfile作成エラー:', createError);
-        showSnackbarLocal('プロファイル作成に失敗しました', 'error');
-        return null;
-      }
-    };
-
     const loadSettings = async () => {
       try {
+        setLoading(true);
         const userId = await getCurrentUserId();
-        
-        if (isUnmounted) return;
         
         if (!userId) {
           console.warn('ユーザーが認証されていません');
@@ -114,95 +85,48 @@ const SettingsPage: React.FC = () => {
           return;
         }
 
-        try {
-          const response = await graphqlClient.graphql({
-            query: getUserProfile,
-            variables: { id: userId }
-          });
-
-          if (isUnmounted) return;          const profile = response.data?.getUserProfile;
-          if (profile) {
-            setUserProfile(profile);
-            
-            // 個別フィールドから設定を復元
-            const userSettings: UserSettings = {
-              notifications: profile.notifications ?? DEFAULT_SETTINGS.notifications,
-              emailNotifications: profile.emailNotifications ?? DEFAULT_SETTINGS.emailNotifications,
-              pushNotifications: profile.pushNotifications ?? DEFAULT_SETTINGS.pushNotifications,
-              darkMode: profile.darkMode ?? DEFAULT_SETTINGS.darkMode,
-              autoUpdate: profile.autoUpdate ?? DEFAULT_SETTINGS.autoUpdate,
-              recipePortionSize: profile.recipePortionSize ?? DEFAULT_SETTINGS.recipePortionSize,
-              dataSync: profile.dataSync ?? DEFAULT_SETTINGS.dataSync,
-            };
-            setSettings(userSettings);
-          } else {
-            // UserProfileが存在しない場合、新規作成
-            console.log('UserProfileが存在しません。新規作成します。');
-            const newProfile = await createNewUserProfile(userId);
-            
-            if (isUnmounted) return;
-            
-            if (newProfile) {
-              setUserProfile(newProfile);
-            }
-            setSettings(DEFAULT_SETTINGS);
-          }
-        } catch (error) {
-          if (isUnmounted) return;
+        const response = await client.graphql({
+          query: getUserProfile,
+          variables: { id: userId }
+        });        const profile = response.data?.getUserProfile;
+        if (profile) {
+          setUserProfile(profile);
           
-          console.error('UserProfile取得エラー:', error);
-          
-          // UserProfileが見つからない場合、新規作成を試行
-          if (error instanceof Error && (error.message.includes('No item found') || error.message.includes('not found'))) {
-            console.log('UserProfileが見つからないため、新規作成します。');
-            const newProfile = await createNewUserProfile(userId);
-            
-            if (isUnmounted) return;
-            
-            if (newProfile) {
-              setUserProfile(newProfile);
-            }
-            setSettings(DEFAULT_SETTINGS);
-          } else {
-            showSnackbarLocal('設定の読み込みに失敗しました', 'error');
-          }
+          // 個別フィールドから設定を復元
+          setSettings(prevSettings => ({
+            ...prevSettings,
+            notifications: profile.notifications ?? prevSettings.notifications,
+            emailNotifications: profile.emailNotifications ?? prevSettings.emailNotifications,
+            pushNotifications: profile.pushNotifications ?? prevSettings.pushNotifications,
+            darkMode: profile.darkMode ?? prevSettings.darkMode,
+            autoUpdate: profile.autoUpdate ?? prevSettings.autoUpdate,
+            recipePortionSize: profile.recipePortionSize ?? prevSettings.recipePortionSize,
+            dataSync: profile.dataSync ?? prevSettings.dataSync,
+          }));
         }
       } catch (error) {
-        if (isUnmounted) return;
-        
         console.error('設定の読み込みに失敗:', error);
-        showSnackbarLocal('設定の読み込みに失敗しました', 'error');
+        showSnackbar('設定の読み込みに失敗しました', 'error');
       } finally {
-        if (!isUnmounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
     loadSettings();
+  }, [client]);
 
-    return () => {
-      isUnmounted = true;
-    };
-  }, []); // 空の依存配列で初回のみ実行
-  // スナックバー表示関数
-  const showSnackbar = (message: string, severity: typeof snackbar.severity) => {
-    setSnackbar({ open: true, message, severity });
-  };
-
-  // 設定保存関数
-  const saveUserSettings = async (newSettings: UserSettings) => {
+  const saveUserSettings = async (newSettings: typeof settings) => {
     try {
-      setSaving(true);
-      const userId = await getCurrentUserId();
+      setSaving(true);      const userId = await getCurrentUserId();
       
       if (!userId) {
         console.warn('ユーザーが認証されていません');
-        showSnackbar('ユーザーが認証されていません', 'error');
         return;
-      }      if (userProfile) {
+      }
+
+      if (userProfile) {
         // 既存のプロファイルを更新
-        const updateResponse = await client.graphql({
+        await client.graphql({
           query: updateUserProfile,
           variables: {
             input: {
@@ -217,11 +141,6 @@ const SettingsPage: React.FC = () => {
             }
           }
         });
-
-        if (updateResponse.data?.updateUserProfile) {
-          setUserProfile(updateResponse.data.updateUserProfile);
-          showSnackbar('設定が正常に保存されました', 'success');
-        }
       } else {
         // 新しいプロファイルを作成
         const userInfo = await getCurrentUserInfo();
@@ -231,7 +150,7 @@ const SettingsPage: React.FC = () => {
           throw new Error('ユーザー情報を取得できませんでした');
         }
 
-        const createResponse = await client.graphql({
+        await client.graphql({
           query: createUserProfile,
           variables: {
             input: {
@@ -250,17 +169,9 @@ const SettingsPage: React.FC = () => {
             }
           }
         });
-
-        const newProfile = createResponse.data?.createUserProfile;
-        if (newProfile) {
-          setUserProfile(newProfile);
-          showSnackbar('新しいプロファイルが作成され、設定が保存されました', 'success');
-        }
       }
 
-      // 最新の設定をstateに反映
-      setSettings(newSettings);
-      
+      showSnackbar('設定を保存しました', 'success');
     } catch (error) {
       console.error('設定の保存に失敗:', error);
       showSnackbar('設定の保存に失敗しました', 'error');
@@ -268,6 +179,7 @@ const SettingsPage: React.FC = () => {
       setSaving(false);
     }
   };
+
   // スイッチ切り替えハンドラ
   const handleSwitchChange = (setting: string) => async (event: React.ChangeEvent<HTMLInputElement>) => {
     const newSettings = {
@@ -280,6 +192,20 @@ const SettingsPage: React.FC = () => {
     
     showSnackbar(`${setting}設定を${event.target.checked ? 'オン' : 'オフ'}にしました`, 'success');
   };
+
+  // セレクト変更ハンドラ
+  const handleSelectChange = (setting: string) => async (event: SelectChangeEvent<string>) => {
+    const newSettings = {
+      ...settings,
+      [setting]: event.target.value
+    };
+    
+    setSettings(newSettings);
+    await saveUserSettings(newSettings);
+    
+    showSnackbar(`${setting}設定を「${event.target.value}」に変更しました`, 'success');
+  };
+
   // スライダー変更完了ハンドラ
   const handleSliderChangeCommitted = (setting: string, displayName: string) => async (_event: Event | React.SyntheticEvent, newValue: number | number[]) => {
     const newSettings = {
@@ -289,8 +215,19 @@ const SettingsPage: React.FC = () => {
     
     setSettings(newSettings);
     await saveUserSettings(newSettings);
+    
     showSnackbar(`${displayName}を${newValue}に設定しました`, 'success');
   };
+
+  // スナックバー表示ハンドラ
+  const showSnackbar = (message: string, severity: 'success' | 'info' | 'warning' | 'error') => {
+    setSnackbar({
+      open: true,
+      message,
+      severity
+    });
+  };
+  
   // スナックバークローズハンドラ
   const handleCloseSnackbar = () => {
     setSnackbar({
@@ -298,6 +235,21 @@ const SettingsPage: React.FC = () => {
       open: false
     });
   };
+  
+  // フォントサイズ選択肢
+  const fontSizeOptions = [
+    { value: 'small', label: '小' },
+    { value: 'medium', label: '中' },
+    { value: 'large', label: '大' }
+  ];
+  
+  // 言語選択肢
+  const languageOptions = [
+    { value: 'ja', label: '日本語' },
+    { value: 'en', label: 'English (英語)' },
+    { value: 'zh', label: '中文 (中国語)' },
+    { value: 'ko', label: '한국어 (韓国語)' }
+  ];
 
   // ローディング中の表示
   if (loading) {
@@ -328,7 +280,8 @@ const SettingsPage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>        {/* 表示設定 */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {/* 表示設定 */}
         <Paper elevation={2} sx={{ p: 0 }}>
           <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
             <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center' }}>
@@ -337,9 +290,10 @@ const SettingsPage: React.FC = () => {
             </Typography>
           </Box>
           <Box sx={{ p: 2 }}>
-            <List disablePadding>              <ListItem>
+            <List disablePadding>
+              <ListItem>
                 <ListItemIcon>
-                  <DisplaySettingsIcon />
+                  <VisibilityIcon />
                 </ListItemIcon>
                 <ListItemText
                   primary="ダークモード"
@@ -350,6 +304,56 @@ const SettingsPage: React.FC = () => {
                   checked={settings.darkMode}
                   onChange={handleSwitchChange('darkMode')}
                 />
+              </ListItem>
+              
+              <Divider variant="inset" component="li" />
+              
+              <ListItem>
+                <ListItemIcon>
+                  <VisibilityIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary="フォントサイズ"
+                  secondary="テキストの表示サイズを調整します"
+                />
+                <FormControl sx={{ minWidth: 120 }}>
+                  <Select
+                    size="small"
+                    value={settings.fontSize}
+                    onChange={handleSelectChange('fontSize')}
+                  >
+                    {fontSizeOptions.map(option => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </ListItem>
+              
+              <Divider variant="inset" component="li" />
+              
+              <ListItem>
+                <ListItemIcon>
+                  <LanguageIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary="言語"
+                  secondary="アプリの表示言語を選択します"
+                />
+                <FormControl sx={{ minWidth: 120 }}>
+                  <Select
+                    size="small"
+                    value={settings.language}
+                    onChange={handleSelectChange('language')}
+                  >
+                    {languageOptions.map(option => (
+                      <MenuItem key={option.value} value={option.value}>
+                        {option.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </ListItem>
             </List>
           </Box>
@@ -462,8 +466,10 @@ const SettingsPage: React.FC = () => {
                     onChangeCommitted={handleSliderChangeCommitted('recipePortionSize', 'デフォルト人数')}
                   />
                 </Box>
-              </ListItem>            </List>
-          </Box>        </Paper>
+              </ListItem>
+            </List>
+          </Box>
+        </Paper>
         
         {/* ヘルプ＆サポート */}
         <Paper elevation={2} sx={{ p: 0 }}>
@@ -536,4 +542,4 @@ const SettingsPage: React.FC = () => {
   );
 };
 
-export default SettingsPage;
+export default SettingsPageSimple;

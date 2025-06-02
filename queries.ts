@@ -43,6 +43,7 @@ export const getMenuItem = /* GraphQL */ `query GetMenuItem($id: ID!) {
     name
     notes
     outsideLocation
+    owner
     recipe {
       category
       cookTime
@@ -130,6 +131,7 @@ export const getShoppingItem = /* GraphQL */ `query GetShoppingItem($id: ID!) {
     isChecked
     name
     notes
+    owner
     shoppingList {
       createdAt
       description
@@ -175,19 +177,26 @@ export const getShoppingList = /* GraphQL */ `query GetShoppingList($id: ID!) {
 >;
 export const getUserProfile = /* GraphQL */ `query GetUserProfile($id: ID!) {
   getUserProfile(id: $id) {
+    autoUpdate
     bio
     cookingExperience
     createdAt
+    darkMode
+    dataSync
     dietaryRestrictions
     email
+    emailNotifications
     familyName
     favoriteCuisines
     givenName
     id
     location
-    preferences
+    notifications
+    owner
     preferredCuisine
     profileImageKey
+    pushNotifications
+    recipePortionSize
     recipesCreatedCount
     updatedAt
     userId
@@ -213,6 +222,7 @@ export const listMenuItems = /* GraphQL */ `query ListMenuItems(
       name
       notes
       outsideLocation
+      owner
       recipeId
       updatedAt
       __typename
@@ -320,6 +330,7 @@ export const listShoppingItems = /* GraphQL */ `query ListShoppingItems(
       isChecked
       name
       notes
+      owner
       shoppingListId
       sourceRecipe
       unit
@@ -366,19 +377,26 @@ export const listUserProfiles = /* GraphQL */ `query ListUserProfiles(
 ) {
   listUserProfiles(filter: $filter, limit: $limit, nextToken: $nextToken) {
     items {
+      autoUpdate
       bio
       cookingExperience
       createdAt
+      darkMode
+      dataSync
       dietaryRestrictions
       email
+      emailNotifications
       familyName
       favoriteCuisines
       givenName
       id
       location
-      preferences
+      notifications
+      owner
       preferredCuisine
       profileImageKey
+      pushNotifications
+      recipePortionSize
       recipesCreatedCount
       updatedAt
       userId

@@ -8,8 +8,11 @@ type GeneratedSubscription<InputType, OutputType> = string & {
   __generatedSubscriptionOutput: OutputType;
 };
 
-export const onCreateMenu = /* GraphQL */ `subscription OnCreateMenu($filter: ModelSubscriptionMenuFilterInput) {
-  onCreateMenu(filter: $filter) {
+export const onCreateMenu = /* GraphQL */ `subscription OnCreateMenu(
+  $filter: ModelSubscriptionMenuFilterInput
+  $owner: String
+) {
+  onCreateMenu(filter: $filter, owner: $owner) {
     createdAt
     date
     id
@@ -27,8 +30,11 @@ export const onCreateMenu = /* GraphQL */ `subscription OnCreateMenu($filter: Mo
   APITypes.OnCreateMenuSubscriptionVariables,
   APITypes.OnCreateMenuSubscription
 >;
-export const onCreateMenuItem = /* GraphQL */ `subscription OnCreateMenuItem($filter: ModelSubscriptionMenuItemFilterInput) {
-  onCreateMenuItem(filter: $filter) {
+export const onCreateMenuItem = /* GraphQL */ `subscription OnCreateMenuItem(
+  $filter: ModelSubscriptionMenuItemFilterInput
+  $owner: String
+) {
+  onCreateMenuItem(filter: $filter, owner: $owner) {
     createdAt
     id
     isOutside
@@ -46,6 +52,7 @@ export const onCreateMenuItem = /* GraphQL */ `subscription OnCreateMenuItem($fi
     name
     notes
     outsideLocation
+    owner
     recipe {
       category
       cookTime
@@ -80,8 +87,9 @@ export const onCreateMenuItem = /* GraphQL */ `subscription OnCreateMenuItem($fi
 >;
 export const onCreateMenuTemplate = /* GraphQL */ `subscription OnCreateMenuTemplate(
   $filter: ModelSubscriptionMenuTemplateFilterInput
+  $owner: String
 ) {
-  onCreateMenuTemplate(filter: $filter) {
+  onCreateMenuTemplate(filter: $filter, owner: $owner) {
     createdAt
     description
     id
@@ -96,8 +104,11 @@ export const onCreateMenuTemplate = /* GraphQL */ `subscription OnCreateMenuTemp
   APITypes.OnCreateMenuTemplateSubscriptionVariables,
   APITypes.OnCreateMenuTemplateSubscription
 >;
-export const onCreateRecipe = /* GraphQL */ `subscription OnCreateRecipe($filter: ModelSubscriptionRecipeFilterInput) {
-  onCreateRecipe(filter: $filter) {
+export const onCreateRecipe = /* GraphQL */ `subscription OnCreateRecipe(
+  $filter: ModelSubscriptionRecipeFilterInput
+  $owner: String
+) {
+  onCreateRecipe(filter: $filter, owner: $owner) {
     category
     cookTime
     cookwareNeeded
@@ -131,8 +142,9 @@ export const onCreateRecipe = /* GraphQL */ `subscription OnCreateRecipe($filter
 >;
 export const onCreateShoppingItem = /* GraphQL */ `subscription OnCreateShoppingItem(
   $filter: ModelSubscriptionShoppingItemFilterInput
+  $owner: String
 ) {
-  onCreateShoppingItem(filter: $filter) {
+  onCreateShoppingItem(filter: $filter, owner: $owner) {
     amount
     category
     createdAt
@@ -140,6 +152,7 @@ export const onCreateShoppingItem = /* GraphQL */ `subscription OnCreateShopping
     isChecked
     name
     notes
+    owner
     shoppingList {
       createdAt
       description
@@ -164,8 +177,9 @@ export const onCreateShoppingItem = /* GraphQL */ `subscription OnCreateShopping
 >;
 export const onCreateShoppingList = /* GraphQL */ `subscription OnCreateShoppingList(
   $filter: ModelSubscriptionShoppingListFilterInput
+  $owner: String
 ) {
-  onCreateShoppingList(filter: $filter) {
+  onCreateShoppingList(filter: $filter, owner: $owner) {
     createdAt
     description
     dueDate
@@ -187,21 +201,29 @@ export const onCreateShoppingList = /* GraphQL */ `subscription OnCreateShopping
 >;
 export const onCreateUserProfile = /* GraphQL */ `subscription OnCreateUserProfile(
   $filter: ModelSubscriptionUserProfileFilterInput
+  $owner: String
 ) {
-  onCreateUserProfile(filter: $filter) {
+  onCreateUserProfile(filter: $filter, owner: $owner) {
+    autoUpdate
     bio
     cookingExperience
     createdAt
+    darkMode
+    dataSync
     dietaryRestrictions
     email
+    emailNotifications
     familyName
     favoriteCuisines
     givenName
     id
     location
-    preferences
+    notifications
+    owner
     preferredCuisine
     profileImageKey
+    pushNotifications
+    recipePortionSize
     recipesCreatedCount
     updatedAt
     userId
@@ -212,8 +234,11 @@ export const onCreateUserProfile = /* GraphQL */ `subscription OnCreateUserProfi
   APITypes.OnCreateUserProfileSubscriptionVariables,
   APITypes.OnCreateUserProfileSubscription
 >;
-export const onDeleteMenu = /* GraphQL */ `subscription OnDeleteMenu($filter: ModelSubscriptionMenuFilterInput) {
-  onDeleteMenu(filter: $filter) {
+export const onDeleteMenu = /* GraphQL */ `subscription OnDeleteMenu(
+  $filter: ModelSubscriptionMenuFilterInput
+  $owner: String
+) {
+  onDeleteMenu(filter: $filter, owner: $owner) {
     createdAt
     date
     id
@@ -231,8 +256,11 @@ export const onDeleteMenu = /* GraphQL */ `subscription OnDeleteMenu($filter: Mo
   APITypes.OnDeleteMenuSubscriptionVariables,
   APITypes.OnDeleteMenuSubscription
 >;
-export const onDeleteMenuItem = /* GraphQL */ `subscription OnDeleteMenuItem($filter: ModelSubscriptionMenuItemFilterInput) {
-  onDeleteMenuItem(filter: $filter) {
+export const onDeleteMenuItem = /* GraphQL */ `subscription OnDeleteMenuItem(
+  $filter: ModelSubscriptionMenuItemFilterInput
+  $owner: String
+) {
+  onDeleteMenuItem(filter: $filter, owner: $owner) {
     createdAt
     id
     isOutside
@@ -250,6 +278,7 @@ export const onDeleteMenuItem = /* GraphQL */ `subscription OnDeleteMenuItem($fi
     name
     notes
     outsideLocation
+    owner
     recipe {
       category
       cookTime
@@ -284,8 +313,9 @@ export const onDeleteMenuItem = /* GraphQL */ `subscription OnDeleteMenuItem($fi
 >;
 export const onDeleteMenuTemplate = /* GraphQL */ `subscription OnDeleteMenuTemplate(
   $filter: ModelSubscriptionMenuTemplateFilterInput
+  $owner: String
 ) {
-  onDeleteMenuTemplate(filter: $filter) {
+  onDeleteMenuTemplate(filter: $filter, owner: $owner) {
     createdAt
     description
     id
@@ -300,8 +330,11 @@ export const onDeleteMenuTemplate = /* GraphQL */ `subscription OnDeleteMenuTemp
   APITypes.OnDeleteMenuTemplateSubscriptionVariables,
   APITypes.OnDeleteMenuTemplateSubscription
 >;
-export const onDeleteRecipe = /* GraphQL */ `subscription OnDeleteRecipe($filter: ModelSubscriptionRecipeFilterInput) {
-  onDeleteRecipe(filter: $filter) {
+export const onDeleteRecipe = /* GraphQL */ `subscription OnDeleteRecipe(
+  $filter: ModelSubscriptionRecipeFilterInput
+  $owner: String
+) {
+  onDeleteRecipe(filter: $filter, owner: $owner) {
     category
     cookTime
     cookwareNeeded
@@ -335,8 +368,9 @@ export const onDeleteRecipe = /* GraphQL */ `subscription OnDeleteRecipe($filter
 >;
 export const onDeleteShoppingItem = /* GraphQL */ `subscription OnDeleteShoppingItem(
   $filter: ModelSubscriptionShoppingItemFilterInput
+  $owner: String
 ) {
-  onDeleteShoppingItem(filter: $filter) {
+  onDeleteShoppingItem(filter: $filter, owner: $owner) {
     amount
     category
     createdAt
@@ -344,6 +378,7 @@ export const onDeleteShoppingItem = /* GraphQL */ `subscription OnDeleteShopping
     isChecked
     name
     notes
+    owner
     shoppingList {
       createdAt
       description
@@ -368,8 +403,9 @@ export const onDeleteShoppingItem = /* GraphQL */ `subscription OnDeleteShopping
 >;
 export const onDeleteShoppingList = /* GraphQL */ `subscription OnDeleteShoppingList(
   $filter: ModelSubscriptionShoppingListFilterInput
+  $owner: String
 ) {
-  onDeleteShoppingList(filter: $filter) {
+  onDeleteShoppingList(filter: $filter, owner: $owner) {
     createdAt
     description
     dueDate
@@ -391,21 +427,29 @@ export const onDeleteShoppingList = /* GraphQL */ `subscription OnDeleteShopping
 >;
 export const onDeleteUserProfile = /* GraphQL */ `subscription OnDeleteUserProfile(
   $filter: ModelSubscriptionUserProfileFilterInput
+  $owner: String
 ) {
-  onDeleteUserProfile(filter: $filter) {
+  onDeleteUserProfile(filter: $filter, owner: $owner) {
+    autoUpdate
     bio
     cookingExperience
     createdAt
+    darkMode
+    dataSync
     dietaryRestrictions
     email
+    emailNotifications
     familyName
     favoriteCuisines
     givenName
     id
     location
-    preferences
+    notifications
+    owner
     preferredCuisine
     profileImageKey
+    pushNotifications
+    recipePortionSize
     recipesCreatedCount
     updatedAt
     userId
@@ -416,8 +460,11 @@ export const onDeleteUserProfile = /* GraphQL */ `subscription OnDeleteUserProfi
   APITypes.OnDeleteUserProfileSubscriptionVariables,
   APITypes.OnDeleteUserProfileSubscription
 >;
-export const onUpdateMenu = /* GraphQL */ `subscription OnUpdateMenu($filter: ModelSubscriptionMenuFilterInput) {
-  onUpdateMenu(filter: $filter) {
+export const onUpdateMenu = /* GraphQL */ `subscription OnUpdateMenu(
+  $filter: ModelSubscriptionMenuFilterInput
+  $owner: String
+) {
+  onUpdateMenu(filter: $filter, owner: $owner) {
     createdAt
     date
     id
@@ -435,8 +482,11 @@ export const onUpdateMenu = /* GraphQL */ `subscription OnUpdateMenu($filter: Mo
   APITypes.OnUpdateMenuSubscriptionVariables,
   APITypes.OnUpdateMenuSubscription
 >;
-export const onUpdateMenuItem = /* GraphQL */ `subscription OnUpdateMenuItem($filter: ModelSubscriptionMenuItemFilterInput) {
-  onUpdateMenuItem(filter: $filter) {
+export const onUpdateMenuItem = /* GraphQL */ `subscription OnUpdateMenuItem(
+  $filter: ModelSubscriptionMenuItemFilterInput
+  $owner: String
+) {
+  onUpdateMenuItem(filter: $filter, owner: $owner) {
     createdAt
     id
     isOutside
@@ -454,6 +504,7 @@ export const onUpdateMenuItem = /* GraphQL */ `subscription OnUpdateMenuItem($fi
     name
     notes
     outsideLocation
+    owner
     recipe {
       category
       cookTime
@@ -488,8 +539,9 @@ export const onUpdateMenuItem = /* GraphQL */ `subscription OnUpdateMenuItem($fi
 >;
 export const onUpdateMenuTemplate = /* GraphQL */ `subscription OnUpdateMenuTemplate(
   $filter: ModelSubscriptionMenuTemplateFilterInput
+  $owner: String
 ) {
-  onUpdateMenuTemplate(filter: $filter) {
+  onUpdateMenuTemplate(filter: $filter, owner: $owner) {
     createdAt
     description
     id
@@ -504,8 +556,11 @@ export const onUpdateMenuTemplate = /* GraphQL */ `subscription OnUpdateMenuTemp
   APITypes.OnUpdateMenuTemplateSubscriptionVariables,
   APITypes.OnUpdateMenuTemplateSubscription
 >;
-export const onUpdateRecipe = /* GraphQL */ `subscription OnUpdateRecipe($filter: ModelSubscriptionRecipeFilterInput) {
-  onUpdateRecipe(filter: $filter) {
+export const onUpdateRecipe = /* GraphQL */ `subscription OnUpdateRecipe(
+  $filter: ModelSubscriptionRecipeFilterInput
+  $owner: String
+) {
+  onUpdateRecipe(filter: $filter, owner: $owner) {
     category
     cookTime
     cookwareNeeded
@@ -539,8 +594,9 @@ export const onUpdateRecipe = /* GraphQL */ `subscription OnUpdateRecipe($filter
 >;
 export const onUpdateShoppingItem = /* GraphQL */ `subscription OnUpdateShoppingItem(
   $filter: ModelSubscriptionShoppingItemFilterInput
+  $owner: String
 ) {
-  onUpdateShoppingItem(filter: $filter) {
+  onUpdateShoppingItem(filter: $filter, owner: $owner) {
     amount
     category
     createdAt
@@ -548,6 +604,7 @@ export const onUpdateShoppingItem = /* GraphQL */ `subscription OnUpdateShopping
     isChecked
     name
     notes
+    owner
     shoppingList {
       createdAt
       description
@@ -572,8 +629,9 @@ export const onUpdateShoppingItem = /* GraphQL */ `subscription OnUpdateShopping
 >;
 export const onUpdateShoppingList = /* GraphQL */ `subscription OnUpdateShoppingList(
   $filter: ModelSubscriptionShoppingListFilterInput
+  $owner: String
 ) {
-  onUpdateShoppingList(filter: $filter) {
+  onUpdateShoppingList(filter: $filter, owner: $owner) {
     createdAt
     description
     dueDate
@@ -595,21 +653,29 @@ export const onUpdateShoppingList = /* GraphQL */ `subscription OnUpdateShopping
 >;
 export const onUpdateUserProfile = /* GraphQL */ `subscription OnUpdateUserProfile(
   $filter: ModelSubscriptionUserProfileFilterInput
+  $owner: String
 ) {
-  onUpdateUserProfile(filter: $filter) {
+  onUpdateUserProfile(filter: $filter, owner: $owner) {
+    autoUpdate
     bio
     cookingExperience
     createdAt
+    darkMode
+    dataSync
     dietaryRestrictions
     email
+    emailNotifications
     familyName
     favoriteCuisines
     givenName
     id
     location
-    preferences
+    notifications
+    owner
     preferredCuisine
     profileImageKey
+    pushNotifications
+    recipePortionSize
     recipesCreatedCount
     updatedAt
     userId

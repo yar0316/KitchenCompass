@@ -2,6 +2,85 @@
  
 //  This file was automatically generated and should not be edited.
 
+// 列挙型定義
+export enum UserProfileCookingExperience {
+  BEGINNER = "BEGINNER",
+  INTERMEDIATE = "INTERMEDIATE",
+  ADVANCED = "ADVANCED",
+}
+
+// UserProfile型定義
+export interface UserProfile {
+  __typename: "UserProfile";
+  id: string;
+  userId: string;
+  givenName: string;
+  familyName: string;
+  preferredCuisine?: string | null;
+  email: string;
+  profileImageKey?: string | null;
+  bio?: string | null;
+  cookingExperience?: UserProfileCookingExperience | null;
+  notifications?: boolean | null;
+  emailNotifications?: boolean | null;
+  pushNotifications?: boolean | null;
+  darkMode?: boolean | null;
+  autoUpdate?: boolean | null;
+  recipePortionSize?: number | null;
+  dataSync?: boolean | null;
+  recipesCreatedCount?: number | null;
+  favoriteRecipesCount?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// UserProfile入力型
+export interface CreateUserProfileInput {
+  id?: string | null;
+  userId: string;
+  givenName: string;
+  familyName: string;
+  preferredCuisine?: string | null;
+  email: string;
+  profileImageKey?: string | null;
+  bio?: string | null;
+  cookingExperience?: UserProfileCookingExperience | null;
+  notifications?: boolean | null;
+  emailNotifications?: boolean | null;
+  pushNotifications?: boolean | null;
+  darkMode?: boolean | null;
+  autoUpdate?: boolean | null;
+  recipePortionSize?: number | null;
+  dataSync?: boolean | null;
+  recipesCreatedCount?: number | null;
+  favoriteRecipesCount?: number | null;
+}
+
+export interface UpdateUserProfileInput {
+  id: string;
+  userId?: string | null;
+  givenName?: string | null;
+  familyName?: string | null;
+  preferredCuisine?: string | null;
+  email?: string | null;
+  profileImageKey?: string | null;
+  bio?: string | null;
+  cookingExperience?: UserProfileCookingExperience | null;
+  notifications?: boolean | null;
+  emailNotifications?: boolean | null;
+  pushNotifications?: boolean | null;
+  darkMode?: boolean | null;
+  autoUpdate?: boolean | null;
+  recipePortionSize?: number | null;
+  dataSync?: boolean | null;
+  recipesCreatedCount?: number | null;
+  favoriteRecipesCount?: number | null;
+}
+
+export interface DeleteUserProfileInput {
+  id: string;
+}
+
 // APIの型定義
 export interface ShoppingList {
   __typename: "ShoppingList";

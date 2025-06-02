@@ -52,6 +52,7 @@ export const createMenuItem = /* GraphQL */ `mutation CreateMenuItem(
     name
     notes
     outsideLocation
+    owner
     recipe {
       category
       cookTime
@@ -151,6 +152,7 @@ export const createShoppingItem = /* GraphQL */ `mutation CreateShoppingItem(
     isChecked
     name
     notes
+    owner
     shoppingList {
       createdAt
       description
@@ -202,19 +204,26 @@ export const createUserProfile = /* GraphQL */ `mutation CreateUserProfile(
   $input: CreateUserProfileInput!
 ) {
   createUserProfile(condition: $condition, input: $input) {
+    autoUpdate
     bio
     cookingExperience
     createdAt
+    darkMode
+    dataSync
     dietaryRestrictions
     email
+    emailNotifications
     familyName
     favoriteCuisines
     givenName
     id
     location
-    preferences
+    notifications
+    owner
     preferredCuisine
     profileImageKey
+    pushNotifications
+    recipePortionSize
     recipesCreatedCount
     updatedAt
     userId
@@ -269,6 +278,7 @@ export const deleteMenuItem = /* GraphQL */ `mutation DeleteMenuItem(
     name
     notes
     outsideLocation
+    owner
     recipe {
       category
       cookTime
@@ -368,6 +378,7 @@ export const deleteShoppingItem = /* GraphQL */ `mutation DeleteShoppingItem(
     isChecked
     name
     notes
+    owner
     shoppingList {
       createdAt
       description
@@ -419,19 +430,26 @@ export const deleteUserProfile = /* GraphQL */ `mutation DeleteUserProfile(
   $input: DeleteUserProfileInput!
 ) {
   deleteUserProfile(condition: $condition, input: $input) {
+    autoUpdate
     bio
     cookingExperience
     createdAt
+    darkMode
+    dataSync
     dietaryRestrictions
     email
+    emailNotifications
     familyName
     favoriteCuisines
     givenName
     id
     location
-    preferences
+    notifications
+    owner
     preferredCuisine
     profileImageKey
+    pushNotifications
+    recipePortionSize
     recipesCreatedCount
     updatedAt
     userId
@@ -486,6 +504,7 @@ export const updateMenuItem = /* GraphQL */ `mutation UpdateMenuItem(
     name
     notes
     outsideLocation
+    owner
     recipe {
       category
       cookTime
@@ -585,6 +604,7 @@ export const updateShoppingItem = /* GraphQL */ `mutation UpdateShoppingItem(
     isChecked
     name
     notes
+    owner
     shoppingList {
       createdAt
       description
@@ -636,19 +656,26 @@ export const updateUserProfile = /* GraphQL */ `mutation UpdateUserProfile(
   $input: UpdateUserProfileInput!
 ) {
   updateUserProfile(condition: $condition, input: $input) {
+    autoUpdate
     bio
     cookingExperience
     createdAt
+    darkMode
+    dataSync
     dietaryRestrictions
     email
+    emailNotifications
     familyName
     favoriteCuisines
     givenName
     id
     location
-    preferences
+    notifications
+    owner
     preferredCuisine
     profileImageKey
+    pushNotifications
+    recipePortionSize
     recipesCreatedCount
     updatedAt
     userId

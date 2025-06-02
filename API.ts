@@ -30,6 +30,7 @@ export type MenuItem = {
   name?: string | null,
   notes?: string | null,
   outsideLocation?: string | null,
+  owner?: string | null,
   recipe?: Recipe | null,
   recipeId?: string | null,
   updatedAt: string,
@@ -80,6 +81,7 @@ export type ShoppingItem = {
   isChecked?: boolean | null,
   name: string,
   notes?: string | null,
+  owner?: string | null,
   shoppingList?: ShoppingList | null,
   shoppingListId: string,
   sourceRecipe?: string | null,
@@ -108,19 +110,26 @@ export type ModelShoppingItemConnection = {
 
 export type UserProfile = {
   __typename: "UserProfile",
+  autoUpdate?: boolean | null,
   bio?: string | null,
   cookingExperience?: UserProfileCookingExperience | null,
   createdAt: string,
+  darkMode?: boolean | null,
+  dataSync?: boolean | null,
   dietaryRestrictions?: string | null,
   email: string,
+  emailNotifications?: boolean | null,
   familyName: string,
   favoriteCuisines?: Array< string | null > | null,
   givenName: string,
   id: string,
   location?: string | null,
-  preferences?: string | null,
+  notifications?: boolean | null,
+  owner?: string | null,
   preferredCuisine?: string | null,
   profileImageKey?: string | null,
+  pushNotifications?: boolean | null,
+  recipePortionSize?: number | null,
   recipesCreatedCount?: number | null,
   updatedAt: string,
   userId: string,
@@ -145,6 +154,7 @@ export type ModelMenuItemFilterInput = {
   notes?: ModelStringInput | null,
   or?: Array< ModelMenuItemFilterInput | null > | null,
   outsideLocation?: ModelStringInput | null,
+  owner?: ModelStringInput | null,
   recipeId?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
 };
@@ -304,6 +314,7 @@ export type ModelShoppingItemFilterInput = {
   not?: ModelShoppingItemFilterInput | null,
   notes?: ModelStringInput | null,
   or?: Array< ModelShoppingItemFilterInput | null > | null,
+  owner?: ModelStringInput | null,
   shoppingListId?: ModelStringInput | null,
   sourceRecipe?: ModelStringInput | null,
   unit?: ModelStringInput | null,
@@ -344,21 +355,28 @@ export type ModelShoppingListConnection = {
 
 export type ModelUserProfileFilterInput = {
   and?: Array< ModelUserProfileFilterInput | null > | null,
+  autoUpdate?: ModelBooleanInput | null,
   bio?: ModelStringInput | null,
   cookingExperience?: ModelUserProfileCookingExperienceInput | null,
   createdAt?: ModelStringInput | null,
+  darkMode?: ModelBooleanInput | null,
+  dataSync?: ModelBooleanInput | null,
   dietaryRestrictions?: ModelStringInput | null,
   email?: ModelStringInput | null,
+  emailNotifications?: ModelBooleanInput | null,
   familyName?: ModelStringInput | null,
   favoriteCuisines?: ModelStringInput | null,
   givenName?: ModelStringInput | null,
   id?: ModelIDInput | null,
   location?: ModelStringInput | null,
   not?: ModelUserProfileFilterInput | null,
+  notifications?: ModelBooleanInput | null,
   or?: Array< ModelUserProfileFilterInput | null > | null,
-  preferences?: ModelStringInput | null,
+  owner?: ModelStringInput | null,
   preferredCuisine?: ModelStringInput | null,
   profileImageKey?: ModelStringInput | null,
+  pushNotifications?: ModelBooleanInput | null,
+  recipePortionSize?: ModelIntInput | null,
   recipesCreatedCount?: ModelIntInput | null,
   updatedAt?: ModelStringInput | null,
   userId?: ModelStringInput | null,
@@ -404,6 +422,7 @@ export type ModelMenuItemConditionInput = {
   notes?: ModelStringInput | null,
   or?: Array< ModelMenuItemConditionInput | null > | null,
   outsideLocation?: ModelStringInput | null,
+  owner?: ModelStringInput | null,
   recipeId?: ModelStringInput | null,
   updatedAt?: ModelStringInput | null,
 };
@@ -495,6 +514,7 @@ export type ModelShoppingItemConditionInput = {
   not?: ModelShoppingItemConditionInput | null,
   notes?: ModelStringInput | null,
   or?: Array< ModelShoppingItemConditionInput | null > | null,
+  owner?: ModelStringInput | null,
   shoppingListId?: ModelStringInput | null,
   sourceRecipe?: ModelStringInput | null,
   unit?: ModelStringInput | null,
@@ -537,38 +557,51 @@ export type CreateShoppingListInput = {
 
 export type ModelUserProfileConditionInput = {
   and?: Array< ModelUserProfileConditionInput | null > | null,
+  autoUpdate?: ModelBooleanInput | null,
   bio?: ModelStringInput | null,
   cookingExperience?: ModelUserProfileCookingExperienceInput | null,
   createdAt?: ModelStringInput | null,
+  darkMode?: ModelBooleanInput | null,
+  dataSync?: ModelBooleanInput | null,
   dietaryRestrictions?: ModelStringInput | null,
   email?: ModelStringInput | null,
+  emailNotifications?: ModelBooleanInput | null,
   familyName?: ModelStringInput | null,
   favoriteCuisines?: ModelStringInput | null,
   givenName?: ModelStringInput | null,
   location?: ModelStringInput | null,
   not?: ModelUserProfileConditionInput | null,
+  notifications?: ModelBooleanInput | null,
   or?: Array< ModelUserProfileConditionInput | null > | null,
-  preferences?: ModelStringInput | null,
+  owner?: ModelStringInput | null,
   preferredCuisine?: ModelStringInput | null,
   profileImageKey?: ModelStringInput | null,
+  pushNotifications?: ModelBooleanInput | null,
+  recipePortionSize?: ModelIntInput | null,
   recipesCreatedCount?: ModelIntInput | null,
   updatedAt?: ModelStringInput | null,
   userId?: ModelStringInput | null,
 };
 
 export type CreateUserProfileInput = {
+  autoUpdate?: boolean | null,
   bio?: string | null,
   cookingExperience?: UserProfileCookingExperience | null,
+  darkMode?: boolean | null,
+  dataSync?: boolean | null,
   dietaryRestrictions?: string | null,
   email: string,
+  emailNotifications?: boolean | null,
   familyName: string,
   favoriteCuisines?: Array< string | null > | null,
   givenName: string,
   id?: string | null,
   location?: string | null,
-  preferences?: string | null,
+  notifications?: boolean | null,
   preferredCuisine?: string | null,
   profileImageKey?: string | null,
+  pushNotifications?: boolean | null,
+  recipePortionSize?: number | null,
   recipesCreatedCount?: number | null,
   userId: string,
 };
@@ -670,18 +703,24 @@ export type UpdateShoppingListInput = {
 };
 
 export type UpdateUserProfileInput = {
+  autoUpdate?: boolean | null,
   bio?: string | null,
   cookingExperience?: UserProfileCookingExperience | null,
+  darkMode?: boolean | null,
+  dataSync?: boolean | null,
   dietaryRestrictions?: string | null,
   email?: string | null,
+  emailNotifications?: boolean | null,
   familyName?: string | null,
   favoriteCuisines?: Array< string | null > | null,
   givenName?: string | null,
   id: string,
   location?: string | null,
-  preferences?: string | null,
+  notifications?: boolean | null,
   preferredCuisine?: string | null,
   profileImageKey?: string | null,
+  pushNotifications?: boolean | null,
+  recipePortionSize?: number | null,
   recipesCreatedCount?: number | null,
   userId?: string | null,
 };
@@ -693,7 +732,7 @@ export type ModelSubscriptionMenuFilterInput = {
   id?: ModelSubscriptionIDInput | null,
   notes?: ModelSubscriptionStringInput | null,
   or?: Array< ModelSubscriptionMenuFilterInput | null > | null,
-  owner?: ModelSubscriptionStringInput | null,
+  owner?: ModelStringInput | null,
   updatedAt?: ModelSubscriptionStringInput | null,
 };
 
@@ -738,6 +777,7 @@ export type ModelSubscriptionMenuItemFilterInput = {
   notes?: ModelSubscriptionStringInput | null,
   or?: Array< ModelSubscriptionMenuItemFilterInput | null > | null,
   outsideLocation?: ModelSubscriptionStringInput | null,
+  owner?: ModelStringInput | null,
   recipeId?: ModelSubscriptionStringInput | null,
   updatedAt?: ModelSubscriptionStringInput | null,
 };
@@ -754,7 +794,7 @@ export type ModelSubscriptionMenuTemplateFilterInput = {
   id?: ModelSubscriptionIDInput | null,
   name?: ModelSubscriptionStringInput | null,
   or?: Array< ModelSubscriptionMenuTemplateFilterInput | null > | null,
-  owner?: ModelSubscriptionStringInput | null,
+  owner?: ModelStringInput | null,
   templateItemsJson?: ModelSubscriptionStringInput | null,
   updatedAt?: ModelSubscriptionStringInput | null,
 };
@@ -777,7 +817,7 @@ export type ModelSubscriptionRecipeFilterInput = {
   name?: ModelSubscriptionStringInput | null,
   notes?: ModelSubscriptionStringInput | null,
   or?: Array< ModelSubscriptionRecipeFilterInput | null > | null,
-  owner?: ModelSubscriptionStringInput | null,
+  owner?: ModelStringInput | null,
   prepTime?: ModelSubscriptionIntInput | null,
   rating?: ModelSubscriptionIntInput | null,
   servings?: ModelSubscriptionIntInput | null,
@@ -806,6 +846,7 @@ export type ModelSubscriptionShoppingItemFilterInput = {
   name?: ModelSubscriptionStringInput | null,
   notes?: ModelSubscriptionStringInput | null,
   or?: Array< ModelSubscriptionShoppingItemFilterInput | null > | null,
+  owner?: ModelStringInput | null,
   shoppingListId?: ModelSubscriptionStringInput | null,
   sourceRecipe?: ModelSubscriptionStringInput | null,
   unit?: ModelSubscriptionStringInput | null,
@@ -833,26 +874,33 @@ export type ModelSubscriptionShoppingListFilterInput = {
   isCompleted?: ModelSubscriptionBooleanInput | null,
   name?: ModelSubscriptionStringInput | null,
   or?: Array< ModelSubscriptionShoppingListFilterInput | null > | null,
-  owner?: ModelSubscriptionStringInput | null,
+  owner?: ModelStringInput | null,
   updatedAt?: ModelSubscriptionStringInput | null,
 };
 
 export type ModelSubscriptionUserProfileFilterInput = {
   and?: Array< ModelSubscriptionUserProfileFilterInput | null > | null,
+  autoUpdate?: ModelSubscriptionBooleanInput | null,
   bio?: ModelSubscriptionStringInput | null,
   cookingExperience?: ModelSubscriptionStringInput | null,
   createdAt?: ModelSubscriptionStringInput | null,
+  darkMode?: ModelSubscriptionBooleanInput | null,
+  dataSync?: ModelSubscriptionBooleanInput | null,
   dietaryRestrictions?: ModelSubscriptionStringInput | null,
   email?: ModelSubscriptionStringInput | null,
+  emailNotifications?: ModelSubscriptionBooleanInput | null,
   familyName?: ModelSubscriptionStringInput | null,
   favoriteCuisines?: ModelSubscriptionStringInput | null,
   givenName?: ModelSubscriptionStringInput | null,
   id?: ModelSubscriptionIDInput | null,
   location?: ModelSubscriptionStringInput | null,
+  notifications?: ModelSubscriptionBooleanInput | null,
   or?: Array< ModelSubscriptionUserProfileFilterInput | null > | null,
-  preferences?: ModelSubscriptionStringInput | null,
+  owner?: ModelStringInput | null,
   preferredCuisine?: ModelSubscriptionStringInput | null,
   profileImageKey?: ModelSubscriptionStringInput | null,
+  pushNotifications?: ModelSubscriptionBooleanInput | null,
+  recipePortionSize?: ModelSubscriptionIntInput | null,
   recipesCreatedCount?: ModelSubscriptionIntInput | null,
   updatedAt?: ModelSubscriptionStringInput | null,
   userId?: ModelSubscriptionStringInput | null,
@@ -902,6 +950,7 @@ export type GetMenuItemQuery = {
     name?: string | null,
     notes?: string | null,
     outsideLocation?: string | null,
+    owner?: string | null,
     recipe?:  {
       __typename: "Recipe",
       category?: string | null,
@@ -995,6 +1044,7 @@ export type GetShoppingItemQuery = {
     isChecked?: boolean | null,
     name: string,
     notes?: string | null,
+    owner?: string | null,
     shoppingList?:  {
       __typename: "ShoppingList",
       createdAt: string,
@@ -1042,19 +1092,26 @@ export type GetUserProfileQueryVariables = {
 export type GetUserProfileQuery = {
   getUserProfile?:  {
     __typename: "UserProfile",
+    autoUpdate?: boolean | null,
     bio?: string | null,
     cookingExperience?: UserProfileCookingExperience | null,
     createdAt: string,
+    darkMode?: boolean | null,
+    dataSync?: boolean | null,
     dietaryRestrictions?: string | null,
     email: string,
+    emailNotifications?: boolean | null,
     familyName: string,
     favoriteCuisines?: Array< string | null > | null,
     givenName: string,
     id: string,
     location?: string | null,
-    preferences?: string | null,
+    notifications?: boolean | null,
+    owner?: string | null,
     preferredCuisine?: string | null,
     profileImageKey?: string | null,
+    pushNotifications?: boolean | null,
+    recipePortionSize?: number | null,
     recipesCreatedCount?: number | null,
     updatedAt: string,
     userId: string,
@@ -1080,6 +1137,7 @@ export type ListMenuItemsQuery = {
       name?: string | null,
       notes?: string | null,
       outsideLocation?: string | null,
+      owner?: string | null,
       recipeId?: string | null,
       updatedAt: string,
     } | null >,
@@ -1186,6 +1244,7 @@ export type ListShoppingItemsQuery = {
       isChecked?: boolean | null,
       name: string,
       notes?: string | null,
+      owner?: string | null,
       shoppingListId: string,
       sourceRecipe?: string | null,
       unit?: string | null,
@@ -1230,19 +1289,26 @@ export type ListUserProfilesQuery = {
     __typename: "ModelUserProfileConnection",
     items:  Array< {
       __typename: "UserProfile",
+      autoUpdate?: boolean | null,
       bio?: string | null,
       cookingExperience?: UserProfileCookingExperience | null,
       createdAt: string,
+      darkMode?: boolean | null,
+      dataSync?: boolean | null,
       dietaryRestrictions?: string | null,
       email: string,
+      emailNotifications?: boolean | null,
       familyName: string,
       favoriteCuisines?: Array< string | null > | null,
       givenName: string,
       id: string,
       location?: string | null,
-      preferences?: string | null,
+      notifications?: boolean | null,
+      owner?: string | null,
       preferredCuisine?: string | null,
       profileImageKey?: string | null,
+      pushNotifications?: boolean | null,
+      recipePortionSize?: number | null,
       recipesCreatedCount?: number | null,
       updatedAt: string,
       userId: string,
@@ -1297,6 +1363,7 @@ export type CreateMenuItemMutation = {
     name?: string | null,
     notes?: string | null,
     outsideLocation?: string | null,
+    owner?: string | null,
     recipe?:  {
       __typename: "Recipe",
       category?: string | null,
@@ -1393,6 +1460,7 @@ export type CreateShoppingItemMutation = {
     isChecked?: boolean | null,
     name: string,
     notes?: string | null,
+    owner?: string | null,
     shoppingList?:  {
       __typename: "ShoppingList",
       createdAt: string,
@@ -1442,19 +1510,26 @@ export type CreateUserProfileMutationVariables = {
 export type CreateUserProfileMutation = {
   createUserProfile?:  {
     __typename: "UserProfile",
+    autoUpdate?: boolean | null,
     bio?: string | null,
     cookingExperience?: UserProfileCookingExperience | null,
     createdAt: string,
+    darkMode?: boolean | null,
+    dataSync?: boolean | null,
     dietaryRestrictions?: string | null,
     email: string,
+    emailNotifications?: boolean | null,
     familyName: string,
     favoriteCuisines?: Array< string | null > | null,
     givenName: string,
     id: string,
     location?: string | null,
-    preferences?: string | null,
+    notifications?: boolean | null,
+    owner?: string | null,
     preferredCuisine?: string | null,
     profileImageKey?: string | null,
+    pushNotifications?: boolean | null,
+    recipePortionSize?: number | null,
     recipesCreatedCount?: number | null,
     updatedAt: string,
     userId: string,
@@ -1507,6 +1582,7 @@ export type DeleteMenuItemMutation = {
     name?: string | null,
     notes?: string | null,
     outsideLocation?: string | null,
+    owner?: string | null,
     recipe?:  {
       __typename: "Recipe",
       category?: string | null,
@@ -1603,6 +1679,7 @@ export type DeleteShoppingItemMutation = {
     isChecked?: boolean | null,
     name: string,
     notes?: string | null,
+    owner?: string | null,
     shoppingList?:  {
       __typename: "ShoppingList",
       createdAt: string,
@@ -1652,19 +1729,26 @@ export type DeleteUserProfileMutationVariables = {
 export type DeleteUserProfileMutation = {
   deleteUserProfile?:  {
     __typename: "UserProfile",
+    autoUpdate?: boolean | null,
     bio?: string | null,
     cookingExperience?: UserProfileCookingExperience | null,
     createdAt: string,
+    darkMode?: boolean | null,
+    dataSync?: boolean | null,
     dietaryRestrictions?: string | null,
     email: string,
+    emailNotifications?: boolean | null,
     familyName: string,
     favoriteCuisines?: Array< string | null > | null,
     givenName: string,
     id: string,
     location?: string | null,
-    preferences?: string | null,
+    notifications?: boolean | null,
+    owner?: string | null,
     preferredCuisine?: string | null,
     profileImageKey?: string | null,
+    pushNotifications?: boolean | null,
+    recipePortionSize?: number | null,
     recipesCreatedCount?: number | null,
     updatedAt: string,
     userId: string,
@@ -1717,6 +1801,7 @@ export type UpdateMenuItemMutation = {
     name?: string | null,
     notes?: string | null,
     outsideLocation?: string | null,
+    owner?: string | null,
     recipe?:  {
       __typename: "Recipe",
       category?: string | null,
@@ -1813,6 +1898,7 @@ export type UpdateShoppingItemMutation = {
     isChecked?: boolean | null,
     name: string,
     notes?: string | null,
+    owner?: string | null,
     shoppingList?:  {
       __typename: "ShoppingList",
       createdAt: string,
@@ -1862,19 +1948,26 @@ export type UpdateUserProfileMutationVariables = {
 export type UpdateUserProfileMutation = {
   updateUserProfile?:  {
     __typename: "UserProfile",
+    autoUpdate?: boolean | null,
     bio?: string | null,
     cookingExperience?: UserProfileCookingExperience | null,
     createdAt: string,
+    darkMode?: boolean | null,
+    dataSync?: boolean | null,
     dietaryRestrictions?: string | null,
     email: string,
+    emailNotifications?: boolean | null,
     familyName: string,
     favoriteCuisines?: Array< string | null > | null,
     givenName: string,
     id: string,
     location?: string | null,
-    preferences?: string | null,
+    notifications?: boolean | null,
+    owner?: string | null,
     preferredCuisine?: string | null,
     profileImageKey?: string | null,
+    pushNotifications?: boolean | null,
+    recipePortionSize?: number | null,
     recipesCreatedCount?: number | null,
     updatedAt: string,
     userId: string,
@@ -1883,6 +1976,7 @@ export type UpdateUserProfileMutation = {
 
 export type OnCreateMenuSubscriptionVariables = {
   filter?: ModelSubscriptionMenuFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnCreateMenuSubscription = {
@@ -1903,6 +1997,7 @@ export type OnCreateMenuSubscription = {
 
 export type OnCreateMenuItemSubscriptionVariables = {
   filter?: ModelSubscriptionMenuItemFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnCreateMenuItemSubscription = {
@@ -1925,6 +2020,7 @@ export type OnCreateMenuItemSubscription = {
     name?: string | null,
     notes?: string | null,
     outsideLocation?: string | null,
+    owner?: string | null,
     recipe?:  {
       __typename: "Recipe",
       category?: string | null,
@@ -1955,6 +2051,7 @@ export type OnCreateMenuItemSubscription = {
 
 export type OnCreateMenuTemplateSubscriptionVariables = {
   filter?: ModelSubscriptionMenuTemplateFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnCreateMenuTemplateSubscription = {
@@ -1972,6 +2069,7 @@ export type OnCreateMenuTemplateSubscription = {
 
 export type OnCreateRecipeSubscriptionVariables = {
   filter?: ModelSubscriptionRecipeFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnCreateRecipeSubscription = {
@@ -2006,6 +2104,7 @@ export type OnCreateRecipeSubscription = {
 
 export type OnCreateShoppingItemSubscriptionVariables = {
   filter?: ModelSubscriptionShoppingItemFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnCreateShoppingItemSubscription = {
@@ -2018,6 +2117,7 @@ export type OnCreateShoppingItemSubscription = {
     isChecked?: boolean | null,
     name: string,
     notes?: string | null,
+    owner?: string | null,
     shoppingList?:  {
       __typename: "ShoppingList",
       createdAt: string,
@@ -2038,6 +2138,7 @@ export type OnCreateShoppingItemSubscription = {
 
 export type OnCreateShoppingListSubscriptionVariables = {
   filter?: ModelSubscriptionShoppingListFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnCreateShoppingListSubscription = {
@@ -2060,24 +2161,32 @@ export type OnCreateShoppingListSubscription = {
 
 export type OnCreateUserProfileSubscriptionVariables = {
   filter?: ModelSubscriptionUserProfileFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnCreateUserProfileSubscription = {
   onCreateUserProfile?:  {
     __typename: "UserProfile",
+    autoUpdate?: boolean | null,
     bio?: string | null,
     cookingExperience?: UserProfileCookingExperience | null,
     createdAt: string,
+    darkMode?: boolean | null,
+    dataSync?: boolean | null,
     dietaryRestrictions?: string | null,
     email: string,
+    emailNotifications?: boolean | null,
     familyName: string,
     favoriteCuisines?: Array< string | null > | null,
     givenName: string,
     id: string,
     location?: string | null,
-    preferences?: string | null,
+    notifications?: boolean | null,
+    owner?: string | null,
     preferredCuisine?: string | null,
     profileImageKey?: string | null,
+    pushNotifications?: boolean | null,
+    recipePortionSize?: number | null,
     recipesCreatedCount?: number | null,
     updatedAt: string,
     userId: string,
@@ -2086,6 +2195,7 @@ export type OnCreateUserProfileSubscription = {
 
 export type OnDeleteMenuSubscriptionVariables = {
   filter?: ModelSubscriptionMenuFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnDeleteMenuSubscription = {
@@ -2106,6 +2216,7 @@ export type OnDeleteMenuSubscription = {
 
 export type OnDeleteMenuItemSubscriptionVariables = {
   filter?: ModelSubscriptionMenuItemFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnDeleteMenuItemSubscription = {
@@ -2128,6 +2239,7 @@ export type OnDeleteMenuItemSubscription = {
     name?: string | null,
     notes?: string | null,
     outsideLocation?: string | null,
+    owner?: string | null,
     recipe?:  {
       __typename: "Recipe",
       category?: string | null,
@@ -2158,6 +2270,7 @@ export type OnDeleteMenuItemSubscription = {
 
 export type OnDeleteMenuTemplateSubscriptionVariables = {
   filter?: ModelSubscriptionMenuTemplateFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnDeleteMenuTemplateSubscription = {
@@ -2175,6 +2288,7 @@ export type OnDeleteMenuTemplateSubscription = {
 
 export type OnDeleteRecipeSubscriptionVariables = {
   filter?: ModelSubscriptionRecipeFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnDeleteRecipeSubscription = {
@@ -2209,6 +2323,7 @@ export type OnDeleteRecipeSubscription = {
 
 export type OnDeleteShoppingItemSubscriptionVariables = {
   filter?: ModelSubscriptionShoppingItemFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnDeleteShoppingItemSubscription = {
@@ -2221,6 +2336,7 @@ export type OnDeleteShoppingItemSubscription = {
     isChecked?: boolean | null,
     name: string,
     notes?: string | null,
+    owner?: string | null,
     shoppingList?:  {
       __typename: "ShoppingList",
       createdAt: string,
@@ -2241,6 +2357,7 @@ export type OnDeleteShoppingItemSubscription = {
 
 export type OnDeleteShoppingListSubscriptionVariables = {
   filter?: ModelSubscriptionShoppingListFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnDeleteShoppingListSubscription = {
@@ -2263,24 +2380,32 @@ export type OnDeleteShoppingListSubscription = {
 
 export type OnDeleteUserProfileSubscriptionVariables = {
   filter?: ModelSubscriptionUserProfileFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnDeleteUserProfileSubscription = {
   onDeleteUserProfile?:  {
     __typename: "UserProfile",
+    autoUpdate?: boolean | null,
     bio?: string | null,
     cookingExperience?: UserProfileCookingExperience | null,
     createdAt: string,
+    darkMode?: boolean | null,
+    dataSync?: boolean | null,
     dietaryRestrictions?: string | null,
     email: string,
+    emailNotifications?: boolean | null,
     familyName: string,
     favoriteCuisines?: Array< string | null > | null,
     givenName: string,
     id: string,
     location?: string | null,
-    preferences?: string | null,
+    notifications?: boolean | null,
+    owner?: string | null,
     preferredCuisine?: string | null,
     profileImageKey?: string | null,
+    pushNotifications?: boolean | null,
+    recipePortionSize?: number | null,
     recipesCreatedCount?: number | null,
     updatedAt: string,
     userId: string,
@@ -2289,6 +2414,7 @@ export type OnDeleteUserProfileSubscription = {
 
 export type OnUpdateMenuSubscriptionVariables = {
   filter?: ModelSubscriptionMenuFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnUpdateMenuSubscription = {
@@ -2309,6 +2435,7 @@ export type OnUpdateMenuSubscription = {
 
 export type OnUpdateMenuItemSubscriptionVariables = {
   filter?: ModelSubscriptionMenuItemFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnUpdateMenuItemSubscription = {
@@ -2331,6 +2458,7 @@ export type OnUpdateMenuItemSubscription = {
     name?: string | null,
     notes?: string | null,
     outsideLocation?: string | null,
+    owner?: string | null,
     recipe?:  {
       __typename: "Recipe",
       category?: string | null,
@@ -2361,6 +2489,7 @@ export type OnUpdateMenuItemSubscription = {
 
 export type OnUpdateMenuTemplateSubscriptionVariables = {
   filter?: ModelSubscriptionMenuTemplateFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnUpdateMenuTemplateSubscription = {
@@ -2378,6 +2507,7 @@ export type OnUpdateMenuTemplateSubscription = {
 
 export type OnUpdateRecipeSubscriptionVariables = {
   filter?: ModelSubscriptionRecipeFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnUpdateRecipeSubscription = {
@@ -2412,6 +2542,7 @@ export type OnUpdateRecipeSubscription = {
 
 export type OnUpdateShoppingItemSubscriptionVariables = {
   filter?: ModelSubscriptionShoppingItemFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnUpdateShoppingItemSubscription = {
@@ -2424,6 +2555,7 @@ export type OnUpdateShoppingItemSubscription = {
     isChecked?: boolean | null,
     name: string,
     notes?: string | null,
+    owner?: string | null,
     shoppingList?:  {
       __typename: "ShoppingList",
       createdAt: string,
@@ -2444,6 +2576,7 @@ export type OnUpdateShoppingItemSubscription = {
 
 export type OnUpdateShoppingListSubscriptionVariables = {
   filter?: ModelSubscriptionShoppingListFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnUpdateShoppingListSubscription = {
@@ -2466,24 +2599,32 @@ export type OnUpdateShoppingListSubscription = {
 
 export type OnUpdateUserProfileSubscriptionVariables = {
   filter?: ModelSubscriptionUserProfileFilterInput | null,
+  owner?: string | null,
 };
 
 export type OnUpdateUserProfileSubscription = {
   onUpdateUserProfile?:  {
     __typename: "UserProfile",
+    autoUpdate?: boolean | null,
     bio?: string | null,
     cookingExperience?: UserProfileCookingExperience | null,
     createdAt: string,
+    darkMode?: boolean | null,
+    dataSync?: boolean | null,
     dietaryRestrictions?: string | null,
     email: string,
+    emailNotifications?: boolean | null,
     familyName: string,
     favoriteCuisines?: Array< string | null > | null,
     givenName: string,
     id: string,
     location?: string | null,
-    preferences?: string | null,
+    notifications?: boolean | null,
+    owner?: string | null,
     preferredCuisine?: string | null,
     profileImageKey?: string | null,
+    pushNotifications?: boolean | null,
+    recipePortionSize?: number | null,
     recipesCreatedCount?: number | null,
     updatedAt: string,
     userId: string,

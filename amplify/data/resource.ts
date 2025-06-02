@@ -25,8 +25,19 @@ const schema = a.schema({  // ユーザープロフィール
       dietaryRestrictions: a.string(), // 食事制限（アレルギーなど）
       cookingExperience: a.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']), // 料理経験レベル
       
-      // 設定情報 - ネストされた構造はオブジェクトとして定義
-      preferences: a.json(), // JSON形式としてシリアライズされた設定情報
+      // 設定情報 - 個別フィールドに変更
+      // 通知設定
+      notifications: a.boolean().default(true),
+      emailNotifications: a.boolean().default(true),
+      pushNotifications: a.boolean().default(true),
+      
+      // 表示設定
+      darkMode: a.boolean().default(false),
+      
+      // 機能設定
+      autoUpdate: a.boolean().default(true),
+      recipePortionSize: a.integer().default(2),
+      dataSync: a.boolean().default(true),
       
       // ユーザー統計情報
       recipesCreatedCount: a.integer().default(0), // 作成したレシピ数
@@ -35,7 +46,7 @@ const schema = a.schema({  // ユーザープロフィール
       // リレーション：お気に入りレシピ（後で追加）
       // favoriteRecipes: a.hasMany('UserRecipeFavorite', 'userId'),
     })
-    .authorization((allow) => allow.owner()),  // レシピ情報
+    .authorization((allow) => allow.owner()),// レシピ情報
   Recipe: a
     .model({
       // 基本情報
