@@ -153,6 +153,28 @@ const schema = a.schema({  // ユーザープロフィール
       templateItemsJson: a.json(), // JSON形式テンプレート項目
     })
     .authorization((allow) => allow.owner()),
+  NotificationMessage: a.model({
+    owner: a.string().required(), // userId
+    message: a.string().required(),
+    type: a.string(), // e.g., "SHOPPING_REMINDER", "RECIPE_UPDATE", "SYSTEM_ANNOUNCEMENT"
+    isRead: a.boolean().required().default(false),
+    relatedItemId: a.string(), // Optional: ID of the related item (e.g., shopping list ID, recipe ID)
+    navigateTo: a.string(), // Optional: Path to navigate to when notification is clicked
+    expireAt: a.timestamp(), // For TTL, store as Unix epoch time
+    createdAt: a.datetime(), // Add createdAt field for sorting
+    // TODO: Revisit GSI for querying notifications by owner and isRead status or creation date after confirming correct syntax for Gen2
+    // byOwnerAndStatus: a.index(['owner', 'isRead']).queryField('notificationsByOwnerAndStatus'), 
+    // byOwnerAndCreatedAt: a.index(['owner', 'createdAt']).queryField('notificationsByOwnerAndCreatedAt'),
+  })
+  .authorization(allow => [
+    allow.ownerDefinedIn('owner'), // Owner can CRUD
+  ])
+  .secondaryIndexes((index) => [
+    index('owner')
+      .name('byOwnerAndCreatedAt')
+      .queryField('notificationsByOwnerAndCreatedAt')
+      .sortKeys(['createdAt']), // Sort by createdAt descending to get latest first
+  ]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
