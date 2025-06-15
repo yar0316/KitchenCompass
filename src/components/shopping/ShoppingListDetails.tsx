@@ -30,7 +30,7 @@ import { ja } from 'date-fns/locale';
 import { green } from '@mui/material/colors';
 import { generateClient } from 'aws-amplify/api';
 import { Schema } from '../../amplify/data/resource';
-import { type ShoppingList, type ShoppingItem } from '../../API';
+import { type ShoppingList, type ShoppingItem } from '../../../API';
 
 // アイテムカテゴリーの選択肢
 const ITEM_CATEGORIES = [

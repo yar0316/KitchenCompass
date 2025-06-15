@@ -437,3 +437,103 @@ export const deleteMenuTemplate = /* GraphQL */ `
     }
   }
 `;
+
+// UserProfile関連のミューテーションを追加
+export const createUserProfile = /* GraphQL */ `
+  mutation CreateUserProfile(
+    $input: CreateUserProfileInput!
+    $condition: ModelUserProfileConditionInput
+  ) {
+    createUserProfile(input: $input, condition: $condition) {
+      id
+      userId
+      givenName
+      familyName
+      preferredCuisine
+      email
+      profileImageKey
+      bio
+      location
+      dietaryRestrictions
+      cookingExperience
+      notifications
+      emailNotifications
+      pushNotifications
+      darkMode
+      autoUpdate
+      recipePortionSize
+      dataSync
+      recipesCreatedCount
+      favoriteCuisines
+      owner
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const updateUserProfile = /* GraphQL */ `
+  mutation UpdateUserProfile(
+    $input: UpdateUserProfileInput!
+    $condition: ModelUserProfileConditionInput
+  ) {
+    updateUserProfile(input: $input, condition: $condition) {
+      id
+      userId
+      givenName
+      familyName
+      preferredCuisine
+      email
+      profileImageKey
+      bio
+      location
+      dietaryRestrictions
+      cookingExperience
+      notifications
+      emailNotifications
+      pushNotifications
+      darkMode
+      autoUpdate
+      recipePortionSize
+      dataSync
+      recipesCreatedCount
+      favoriteCuisines
+      owner
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const deleteUserProfile = /* GraphQL */ `
+  mutation DeleteUserProfile(
+    $input: DeleteUserProfileInput!
+    $condition: ModelUserProfileConditionInput
+  ) {
+    deleteUserProfile(input: $input, condition: $condition) {
+      id
+      userId
+      givenName
+      familyName
+      preferredCuisine
+      email
+      profileImageKey
+      bio
+      location
+      dietaryRestrictions
+      cookingExperience
+      notifications
+      emailNotifications
+      pushNotifications
+      darkMode
+      autoUpdate
+      recipePortionSize
+      dataSync
+      recipesCreatedCount
+      favoriteCuisines
+      owner
+      createdAt
+      updatedAt
+    }
+  }
+`;

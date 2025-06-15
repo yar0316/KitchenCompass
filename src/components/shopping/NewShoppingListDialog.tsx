@@ -19,9 +19,8 @@ interface NewShoppingListDialogProps {
   onClose: () => void;
   onSave: (list: {
     name: string;
-    description: string;
-    dueDate: string | null;
-    isCompleted: boolean;
+    description?: string;
+    dueDate?: string;
   }) => void;
 }
 
@@ -57,17 +56,14 @@ const NewShoppingListDialog: React.FC<NewShoppingListDialogProps> = ({
     if (!name.trim()) {
       setNameError('リスト名を入力してください');
       return;
-    }
-
-    setIsSaving(true);
+    }    setIsSaving(true);
 
     // AWS Amplifyに送信するためのフォーマット処理
     // ISO文字列としてデータを渡す
     onSave({
       name: name.trim(),
-      description: description.trim(),
-      dueDate: dueDate ? dueDate.toISOString() : null,
-      isCompleted: false
+      description: description.trim() || undefined,
+      dueDate: dueDate ? dueDate.toISOString() : undefined
     });
 
     resetForm();

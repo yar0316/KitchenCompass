@@ -27,7 +27,7 @@ import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { listRecipes } from '../../graphql/queries';
 import { createRecipe, updateRecipe, deleteRecipe } from '../../graphql/mutations';
-import { Recipe, CreateRecipeInput, UpdateRecipeInput, DeleteRecipeInput } from '../../API';
+import { Recipe, CreateRecipeInput, UpdateRecipeInput, DeleteRecipeInput } from '../../../API';
 import { DUMMY_IMAGE_URL } from '../../mock/recipeData';
 
 // APIクライアントの初期化

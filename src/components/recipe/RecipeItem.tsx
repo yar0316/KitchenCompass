@@ -9,7 +9,7 @@ import {
   Chip,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
-import { Recipe } from '../../API';
+import { Recipe } from '../../../API';
 import { DUMMY_IMAGE_URL } from '../../mock/recipeData';
 
 interface RecipeItemProps {

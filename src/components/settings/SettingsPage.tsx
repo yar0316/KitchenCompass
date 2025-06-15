@@ -23,10 +23,10 @@ import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import { generateClient } from 'aws-amplify/api';
-import { getUserProfile } from '../../../queries';
-import { updateUserProfile, createUserProfile } from '../../../mutations';
+import { getUserProfile } from '../../graphql/queries';
+import { updateUserProfile, createUserProfile } from '../../graphql/mutations';
 import { getCurrentUserId, getCurrentUserInfo } from '../../utils/authUtils';
-import type { UserProfile } from '../../../API';
+import type { UserProfile } from '../../API';
 import { DEFAULT_SETTINGS, type UserSettings } from '../../config/defaultSettings';
 
 /**
@@ -85,13 +85,14 @@ const SettingsPage: React.FC = () => {
               // 設定項目はDynamoDBのデフォルト値を使用するため明示的に設定しない
             }
           }
-        });
-
-        const newProfile = createResponse.data?.createUserProfile;
-        if (newProfile) {
-          console.log('UserProfileが正常に作成されました');
-          showSnackbarLocal('新しいユーザープロファイルを作成しました', 'success');
-          return newProfile;
+        });        // GraphQLResultの型チェック
+        if ('data' in createResponse && createResponse.data) {
+          const newProfile = createResponse.data.createUserProfile;
+          if (newProfile) {
+            console.log('UserProfileが正常に作成されました');
+            showSnackbarLocal('新しいユーザープロファイルを作成しました', 'success');
+            return newProfile;
+          }
         }
         
         return null;
@@ -120,32 +121,36 @@ const SettingsPage: React.FC = () => {
             variables: { id: userId }
           });
 
-          if (isUnmounted) return;          const profile = response.data?.getUserProfile;
-          if (profile) {
-            setUserProfile(profile);
-            
-            // 個別フィールドから設定を復元
-            const userSettings: UserSettings = {
-              notifications: profile.notifications ?? DEFAULT_SETTINGS.notifications,
-              emailNotifications: profile.emailNotifications ?? DEFAULT_SETTINGS.emailNotifications,
-              pushNotifications: profile.pushNotifications ?? DEFAULT_SETTINGS.pushNotifications,
-              darkMode: profile.darkMode ?? DEFAULT_SETTINGS.darkMode,
-              autoUpdate: profile.autoUpdate ?? DEFAULT_SETTINGS.autoUpdate,
-              recipePortionSize: profile.recipePortionSize ?? DEFAULT_SETTINGS.recipePortionSize,
-              dataSync: profile.dataSync ?? DEFAULT_SETTINGS.dataSync,
-            };
-            setSettings(userSettings);
-          } else {
-            // UserProfileが存在しない場合、新規作成
-            console.log('UserProfileが存在しません。新規作成します。');
-            const newProfile = await createNewUserProfile(userId);
-            
-            if (isUnmounted) return;
-            
-            if (newProfile) {
-              setUserProfile(newProfile);
+          if (isUnmounted) return;
+            // GraphQLResultの型チェック
+          if ('data' in response && response.data) {
+            const profile = response.data.getUserProfile;
+            if (profile) {
+              setUserProfile(profile);
+              
+              // 個別フィールドから設定を復元
+              const userSettings: UserSettings = {
+                notifications: profile.notifications ?? DEFAULT_SETTINGS.notifications,
+                emailNotifications: profile.emailNotifications ?? DEFAULT_SETTINGS.emailNotifications,
+                pushNotifications: profile.pushNotifications ?? DEFAULT_SETTINGS.pushNotifications,
+                darkMode: profile.darkMode ?? DEFAULT_SETTINGS.darkMode,
+                autoUpdate: profile.autoUpdate ?? DEFAULT_SETTINGS.autoUpdate,
+                recipePortionSize: profile.recipePortionSize ?? DEFAULT_SETTINGS.recipePortionSize,
+                dataSync: profile.dataSync ?? DEFAULT_SETTINGS.dataSync,
+              };
+              setSettings(userSettings);
+            } else {
+              // UserProfileが存在しない場合、新規作成
+              console.log('UserProfileが存在しません。新規作成します。');
+              const newProfile = await createNewUserProfile(userId);
+              
+              if (isUnmounted) return;
+              
+              if (newProfile) {
+                setUserProfile(newProfile);
+              }
+              setSettings(DEFAULT_SETTINGS);
             }
-            setSettings(DEFAULT_SETTINGS);
           }
         } catch (error) {
           if (isUnmounted) return;
@@ -216,11 +221,12 @@ const SettingsPage: React.FC = () => {
               dataSync: newSettings.dataSync,
             }
           }
-        });
-
-        if (updateResponse.data?.updateUserProfile) {
-          setUserProfile(updateResponse.data.updateUserProfile);
-          showSnackbar('設定が正常に保存されました', 'success');
+        });        // GraphQLResultの型チェック  
+        if ('data' in updateResponse && updateResponse.data) {
+          if (updateResponse.data.updateUserProfile) {
+            setUserProfile(updateResponse.data.updateUserProfile);
+            showSnackbar('設定が正常に保存されました', 'success');
+          }
         }
       } else {
         // 新しいプロファイルを作成
@@ -249,12 +255,13 @@ const SettingsPage: React.FC = () => {
               dataSync: newSettings.dataSync,
             }
           }
-        });
-
-        const newProfile = createResponse.data?.createUserProfile;
-        if (newProfile) {
-          setUserProfile(newProfile);
-          showSnackbar('新しいプロファイルが作成され、設定が保存されました', 'success');
+        });        // GraphQLResultの型チェック
+        if ('data' in createResponse && createResponse.data) {
+          const newProfile = createResponse.data.createUserProfile;
+          if (newProfile) {
+            setUserProfile(newProfile);
+            showSnackbar('新しいプロファイルが作成され、設定が保存されました', 'success');
+          }
         }
       }
 

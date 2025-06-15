@@ -21,7 +21,7 @@ import ShoppingListDetails from './ShoppingListDetails';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { Schema } from '../../../amplify/data/resource';
-import { type ShoppingList } from '../../API';
+import { type ShoppingList, type ShoppingItem } from '../../API';
 
 // Amplify APIクライアントを生成
 const client = generateClient<Schema>();
@@ -222,11 +222,9 @@ const ShoppingListPage: React.FC = () => {
                       list={{
                         id: list.id,
                         name: list.name,
-                        description: list.description || '',
-                        dueDate: list.dueDate || null,
-                        isCompleted: list.isCompleted || false,
-                        itemCount: list.items?.items?.length || 0,
-                        completedCount: list.items?.items?.filter(item => item?.isChecked)?.length || 0
+                        description: list.description || '',                        dueDate: list.dueDate || null,
+                        isCompleted: list.isCompleted || false,                        itemCount: list.items?.items?.length || 0,
+                        completedCount: list.items?.items?.filter((item: ShoppingItem | null | undefined) => item?.isChecked)?.length || 0
                       }}
                       isSelected={selectedList === list.id}
                       onSelect={() => handleSelectList(list.id)}

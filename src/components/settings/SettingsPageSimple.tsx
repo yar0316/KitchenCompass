@@ -29,10 +29,10 @@ import DisplaySettingsIcon from '@mui/icons-material/DisplaySettings';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import { generateClient } from 'aws-amplify/api';
-import { getUserProfile } from '../../../queries';
-import { updateUserProfile, createUserProfile } from '../../../mutations';
+import { getUserProfile } from '../../graphql/queries';
+import { updateUserProfile, createUserProfile } from '../../graphql/mutations';
 import { getCurrentUserId, getCurrentUserInfo } from '../../utils/authUtils';
-import type { UserProfile } from '../../../API';
+import type { UserProfile } from '../../API';
 
 /**
  * 設定画面コンポーネント (簡略版)
@@ -88,21 +88,25 @@ const SettingsPageSimple: React.FC = () => {
         const response = await client.graphql({
           query: getUserProfile,
           variables: { id: userId }
-        });        const profile = response.data?.getUserProfile;
-        if (profile) {
-          setUserProfile(profile);
-          
-          // 個別フィールドから設定を復元
-          setSettings(prevSettings => ({
-            ...prevSettings,
-            notifications: profile.notifications ?? prevSettings.notifications,
-            emailNotifications: profile.emailNotifications ?? prevSettings.emailNotifications,
-            pushNotifications: profile.pushNotifications ?? prevSettings.pushNotifications,
-            darkMode: profile.darkMode ?? prevSettings.darkMode,
-            autoUpdate: profile.autoUpdate ?? prevSettings.autoUpdate,
-            recipePortionSize: profile.recipePortionSize ?? prevSettings.recipePortionSize,
-            dataSync: profile.dataSync ?? prevSettings.dataSync,
-          }));
+        });
+          // GraphQLResultの型チェック
+        if ('data' in response && response.data) {
+          const profile = response.data.getUserProfile;
+          if (profile) {
+            setUserProfile(profile);
+            
+            // 個別フィールドから設定を復元
+            setSettings(prevSettings => ({
+              ...prevSettings,
+              notifications: profile.notifications ?? prevSettings.notifications,
+              emailNotifications: profile.emailNotifications ?? prevSettings.emailNotifications,
+              pushNotifications: profile.pushNotifications ?? prevSettings.pushNotifications,
+              darkMode: profile.darkMode ?? prevSettings.darkMode,
+              autoUpdate: profile.autoUpdate ?? prevSettings.autoUpdate,
+              recipePortionSize: profile.recipePortionSize ?? prevSettings.recipePortionSize,
+              dataSync: profile.dataSync ?? prevSettings.dataSync,
+            }));
+          }
         }
       } catch (error) {
         console.error('設定の読み込みに失敗:', error);
