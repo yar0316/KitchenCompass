@@ -1,9 +1,13 @@
 import type { Handler } from 'aws-lambda';
 import { generateClient, type GraphQLResult } from 'aws-amplify/api';
+import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
 
 // Constants
 const NOTIFICATION_TYPE_SHOPPING_REMINDER = 'SHOPPING_REMINDER';
 const NOTIFICATION_MESSAGE_TEMPLATE_SHOPPING_REMINDER = (title: string) => `今日の買い物リスト「${title}」の予定があります。`;
+
+// Initialize SNS client
+const snsClient = new SNSClient({ region: process.env.AWS_REGION });
 
 // Helper function to get today's date in JST (YYYY-MM-DD)
 function getJstTodayDateString(): string {
@@ -208,19 +212,66 @@ export const handler: Handler = async (event) => {
             console.error(`ERROR: GraphQL errors while creating NotificationMessage for user ${userId}, list ${list.id}:`, JSON.stringify(createNotificationResult.errors, null, 2));
           } else {
             console.log(`INFO: NotificationMessage created for user ${userId} for shopping list ${list.id}. ID: ${createNotificationResult.data?.createNotificationMessage?.id}`);
-          }
-        } catch (cmError: any) {
-          console.error(`ERROR: Failed to create NotificationMessage for user ${userId}, list ${list.id}:`, cmError.message || cmError);
+            
+            // SNSトピックにプッシュ通知メッセージを発行
+            try {
+              const snsTopicArn = process.env.SNS_TOPIC_ARN;
+              if (!snsTopicArn) {
+                console.warn(`WARN: SNS_TOPIC_ARN environment variable not set. Skipping push notification for user ${userId}.`);
+              } else {
+                // SNSメッセージペイロードを構築
+                const snsMessage = {
+                  default: notificationMessage, // フォールバック用のデフォルトメッセージ
+                  GCM: JSON.stringify({
+                    data: {
+                      title: '買い物リマインダー',
+                      body: notificationMessage,
+                      userId: userId,
+                      shoppingListId: list.id,
+                      navigateTo: `/shopping-lists/${list.id}`,
+                      type: NOTIFICATION_TYPE_SHOPPING_REMINDER,
+                    }
+                  }),
+                  APNS: JSON.stringify({
+                    aps: {
+                      alert: {
+                        title: '買い物リマインダー',
+                        body: notificationMessage,
+                      },
+                      sound: 'default',
+                    },
+                    userId: userId,
+                    shoppingListId: list.id,
+                    navigateTo: `/shopping-lists/${list.id}`,
+                    type: NOTIFICATION_TYPE_SHOPPING_REMINDER,
+                  })
+                };
+
+                const publishCommand = new PublishCommand({
+                  TopicArn: snsTopicArn,
+                  Message: JSON.stringify(snsMessage),
+                  MessageStructure: 'json', // プラットフォーム固有のメッセージ形式を使用
+                  Subject: '買い物リマインダー通知',
+                });
+
+                const publishResult = await snsClient.send(publishCommand);
+                console.log(`INFO: SNS message sent successfully for user ${userId}, shopping list ${list.id}. MessageId: ${publishResult.MessageId}`);
+              }
+            } catch (snsError: unknown) {
+              console.error(`ERROR: Failed to send SNS message for user ${userId}, list ${list.id}:`, snsError instanceof Error ? snsError.message : String(snsError));
+            }
+          }        } catch (cmError: unknown) {
+          console.error(`ERROR: Failed to create NotificationMessage for user ${userId}, list ${list.id}:`, cmError instanceof Error ? cmError.message : String(cmError));
         }
 
-      } catch (upError: any) {
-        console.error(`ERROR: Failed to process user profile or create notification for user ${userId}, list ${list.id}:`, upError.message || upError);
+      } catch (upError: unknown) {
+        console.error(`ERROR: Failed to process user profile or create notification for user ${userId}, list ${list.id}:`, upError instanceof Error ? upError.message : String(upError));
       }
     }
     console.log('INFO: Shopping Reminder scheduler finished successfully.');
 
-  } catch (error: any) {
-    console.error('ERROR: Shopping Reminder scheduler failed:', error.message || error, error.stack);
+  } catch (error: unknown) {
+    console.error('ERROR: Shopping Reminder scheduler failed:', error instanceof Error ? error.message : String(error), error instanceof Error ? error.stack : '');
     // Consider re-throwing or specific error handling for Lambda to indicate failure
     // For example, throw error; to make the Lambda invocation fail.
   }

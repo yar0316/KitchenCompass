@@ -152,28 +152,25 @@ const schema = a.schema({  // ユーザープロフィール
       // テンプレート内容 - JSON文字列として保存
       templateItemsJson: a.json(), // JSON形式テンプレート項目
     })
-    .authorization((allow) => allow.owner()),
-  NotificationMessage: a.model({
-    owner: a.string().required(), // userId
-    message: a.string().required(),
-    type: a.string(), // e.g., "SHOPPING_REMINDER", "RECIPE_UPDATE", "SYSTEM_ANNOUNCEMENT"
-    isRead: a.boolean().required().default(false),
-    relatedItemId: a.string(), // Optional: ID of the related item (e.g., shopping list ID, recipe ID)
-    navigateTo: a.string(), // Optional: Path to navigate to when notification is clicked
-    expireAt: a.timestamp(), // For TTL, store as Unix epoch time
-    createdAt: a.datetime(), // Add createdAt field for sorting
-    // TODO: Revisit GSI for querying notifications by owner and isRead status or creation date after confirming correct syntax for Gen2
-    // byOwnerAndStatus: a.index(['owner', 'isRead']).queryField('notificationsByOwnerAndStatus'), 
-    // byOwnerAndCreatedAt: a.index(['owner', 'createdAt']).queryField('notificationsByOwnerAndCreatedAt'),
+    .authorization((allow) => allow.owner()),  NotificationMessage: a.model({
+    owner: a.string().required(), // ユーザーID (パーティションキー for GSI)
+    message: a.string().required(), // 通知メッセージ本文
+    type: a.string().required(), // 通知タイプ
+    isRead: a.boolean().default(false), // 既読フラグ
+    relatedItemId: a.id(), // 関連アイテムID
+    navigateTo: a.string(), // 通知クリック時の遷移先パス
+    // createdAt will be automatically managed by Amplify
+    // updatedAt will be automatically managed by Amplify
+    expireAt: a.timestamp().required(), // TTL属性 (Unixタイムスタンプ)
   })
-  .authorization(allow => [
-    allow.ownerDefinedIn('owner'), // Owner can CRUD
-  ])
-  .secondaryIndexes((index) => [
+  .secondaryIndexes(index => [
     index('owner')
       .name('byOwnerAndCreatedAt')
       .queryField('notificationsByOwnerAndCreatedAt')
-      .sortKeys(['createdAt']), // Sort by createdAt descending to get latest first
+  ])
+  .authorization(allow => [
+    allow.ownerDefinedIn('owner'),
+    allow.group('Admins').to(['read', 'create', 'update', 'delete'])
   ]),
 });
 

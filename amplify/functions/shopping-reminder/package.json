@@ -6,10 +6,12 @@
   "license": "Apache-2.0",
   "dependencies": {
     "aws-amplify": "^6.0.0",
-    "@aws-amplify/api-graphql": "^6.0.0"
+    "@aws-amplify/api": "^6.0.0",
+    "@aws-sdk/client-sns": "^3.590.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.92",
+    "@types/node": "^20.0.0",
     "typescript": "^5.0.0"
   },
   "scripts": {
