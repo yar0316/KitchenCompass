@@ -1,0 +1,7 @@
+{
+  "name": "shopping-list-notification",
+  "version": "1.0.0",
+  "dependencies": {
+    "aws-amplify": "^6.0.0"
+  }
+}

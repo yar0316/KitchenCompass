@@ -10,16 +10,15 @@ import {
   MenuItem,
   Tooltip,
   Switch,
-  Badge,
   useTheme,
   alpha
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import NotificationsIcon from '@mui/icons-material/Notifications';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useMediaQuery } from '@mui/material';
+import NotificationCenterMock from '../notifications/NotificationCenter.mock';
 
 interface AppHeaderProps {
   onDrawerToggle: () => void;
@@ -39,13 +38,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState<null | HTMLElement>(null);
   const isUserMenuOpen = Boolean(userMenuAnchorEl);
 
-  // 通知メニューの状態
-  const [notificationsAnchorEl, setNotificationsAnchorEl] = useState<null | HTMLElement>(null);
-  const isNotificationsMenuOpen = Boolean(notificationsAnchorEl);
-  
-  // ダミーの通知数（実際のアプリでは状態管理やAPIから取得）
-  const notificationCount = 3;
-
   // ユーザーメニューハンドラー
   const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setUserMenuAnchorEl(event.currentTarget);
@@ -53,15 +45,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
   const handleUserMenuClose = () => {
     setUserMenuAnchorEl(null);
-  };
-
-  // 通知メニューハンドラー
-  const handleNotificationsOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setNotificationsAnchorEl(event.currentTarget);
-  };
-
-  const handleNotificationsClose = () => {
-    setNotificationsAnchorEl(null);
   };
 
   return (
@@ -130,40 +113,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             />
           </Box>
           
-          {/* 通知アイコン */}
-          <Tooltip title="通知">
-            <IconButton
-              onClick={handleNotificationsOpen}
-              color="inherit"
-              size="large"
-            >
-              <Badge badgeContent={notificationCount} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-          </Tooltip>
-          
-          {/* 通知メニュー */}
-          <Menu
-            anchorEl={notificationsAnchorEl}
-            open={isNotificationsMenuOpen}
-            onClose={handleNotificationsClose}
-            PaperProps={{
-              sx: { width: 320, maxHeight: 480 }
-            }}
-            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
-            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
-          >
-            <MenuItem onClick={handleNotificationsClose}>
-              <Typography variant="subtitle2">今週の人気レシピが更新されました</Typography>
-            </MenuItem>
-            <MenuItem onClick={handleNotificationsClose}>
-              <Typography variant="subtitle2">買い物リスト「週末の買い物」の期限が近づいています</Typography>
-            </MenuItem>
-            <MenuItem onClick={handleNotificationsClose}>
-              <Typography variant="subtitle2">レシピ「夏野菜カレー」が保存されました</Typography>
-            </MenuItem>
-          </Menu>
+          {/* 通知センター */}
+          <NotificationCenterMock />
           
           {/* プロフィールアバター */}
           <Tooltip title="設定">

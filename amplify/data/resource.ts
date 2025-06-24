@@ -153,6 +153,26 @@ const schema = a.schema({  // ユーザープロフィール
       templateItemsJson: a.json(), // JSON形式テンプレート項目
     })
     .authorization((allow) => allow.owner()),
+
+  // 通知メッセージ
+  NotificationMessage: a
+    .model({
+      // 基本情報
+      message: a.string().required(), // 通知メッセージ
+      type: a.string().required(), // 通知タイプ (shopping-list, menu, etc.)
+      isRead: a.boolean().default(false), // 既読フラグ
+      
+      // 関連情報
+      relatedItemId: a.string(), // 関連するアイテムのID（買い物リストIDなど）
+      navigateTo: a.string(), // 通知をクリックした時の遷移先
+      
+      // 有効期限
+      expireAt: a.datetime(), // 通知の有効期限
+      
+      // 所有者
+      owner: a.string(),
+    })
+    .authorization((allow) => allow.owner()),
 });
 
 export type Schema = ClientSchema<typeof schema>;
